@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/schemas/source-schema-v1.json",
+  "title": "Yomuhon Declarative Source Config V1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "language",
+    "baseURL",
+    "engineMode",
+    "allowedDomains",
+    "supports",
+    "routes",
+    "selectors"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "integer"
+    },
+    "language": {
+      "type": "string"
+    },
+    "baseURL": {
+      "type": "string",
+      "format": "uri"
+    },
+    "engineMode": {
+      "enum": [
+        "html",
+        "json-api"
+      ]
+    },
+    "enabledByDefault": {
+      "type": "boolean"
+    },
+    "experimental": {
+      "type": "boolean"
+    },
+    "allowedDomains": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "supports": {
+      "type": "object"
+    },
+    "network": {
+      "type": "object"
+    },
+    "routes": {
+      "type": "object"
+    },
+    "selectors": {
+      "type": "object"
+    },
+    "cleanup": {
+      "type": "object"
+    },
+    "tests": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

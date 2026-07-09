@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-07-09",
+  "minimumAppVersion": "1.0.0",
+  "sources": [
+    {
+      "id": "mangakatana_json",
+      "name": "MangaKatana JSON",
+      "version": 1,
+      "language": "en",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangakatana.json",
+      "enabled": true,
+      "experimental": true,
+      "allowedDomains": [
+        "mangakatana.com",
+        "i.mkklcdnv6tempv2.com",
+        "i.mkklcdnv6.com"
+      ]
+    }
+  ]
+}

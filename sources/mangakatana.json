@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "id": "mangakatana_json",
+  "name": "MangaKatana JSON",
+  "version": 1,
+  "language": "en",
+  "baseURL": "https://mangakatana.com",
+  "engineMode": "html",
+  "enabledByDefault": false,
+  "experimental": true,
+  "allowedDomains": [
+    "mangakatana.com",
+    "i.mkklcdnv6tempv2.com",
+    "i.mkklcdnv6.com"
+  ],
+  "supports": {
+    "search": true,
+    "popular": true,
+    "details": true,
+    "chapters": true,
+    "pages": true
+  },
+  "network": {
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
+      "Referer": "https://mangakatana.com/"
+    }
+  },
+  "routes": {
+    "popular": {
+      "path": "/manga/page/{page}",
+      "pagination": {
+        "type": "path",
+        "start": 1,
+        "maxPages": 1
+      }
+    },
+    "search": {
+      "path": "/",
+      "query": {
+        "search": "{{query}}",
+        "search_by": "book_name"
+      }
+    }
+  },
+  "selectors": {
+    "popular": {
+      "container": ".item",
+      "title": {
+        "selectors": [
+          ".title a",
+          "a"
+        ],
+        "attrs": [
+          "text"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "url": {
+        "selectors": [
+          ".title a",
+          "a"
+        ],
+        "attrs": [
+          "href"
+        ],
+        "required": true
+      },
+      "cover": {
+        "selectors": [
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "data-original",
+          "data-lazy-src",
+          "src"
+        ]
+      }
+    },
+    "search": {
+      "container": "a[href*='/manga/']",
+      "title": {
+        "selectors": [
+          "*"
+        ],
+        "attrs": [
+          "title",
+          "text"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "url": {
+        "attrs": [
+          "href"
+        ],
+        "required": true
+      },
+      "cover": {
+        "selectors": [
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "data-original",
+          "data-lazy-src",
+          "src"
+        ]
+      }
+    },
+    "details": {
+      "title": {
+        "selectors": [
+          "h1",
+          "meta[property='og:title']"
+        ],
+        "attrs": [
+          "text",
+          "content"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "synopsis": {
+        "selectors": [
+          ".summary",
+          ".description",
+          "meta[name='description']",
+          "meta[property='og:description']"
+        ],
+        "attrs": [
+          "text",
+          "content"
+        ],
+        "cleanup": [
+          "stripHTML",
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "cover": {
+        "selectors": [
+          ".cover img",
+          "meta[property='og:image']",
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "data-original",
+          "src",
+          "content"
+        ]
+      }
+    },
+    "chapters": {
+      "container": "a[href*='/manga/']",
+      "title": {
+        "attrs": [
+          "text",
+          "title"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "url": {
+        "attrs": [
+          "href"
+        ],
+        "required": true
+      },
+      "number": {
+        "from": "url",
+        "regex": "/c([0-9]+(?:\\.[0-9]+)?)"
+      },
+      "sort": "numberAscending"
+    },
+    "pages": {
+      "extractors": [
+        {
+          "type": "css",
+          "selector": "img",
+          "attrs": [
+            "data-src",
+            "data-original",
+            "data-lazy-src",
+            "srcset",
+            "src"
+          ]
+        },
+        {
+          "type": "regex",
+          "pattern": "(https?:\\\\?/\\\\?/[^\\\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\\\"']*)?)"
+        }
+      ],
+      "filters": {
+        "mustContain": [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".webp"
+        ],
+        "blockContains": [
+          "logo",
+          "avatar",
+          "banner",
+          "ads",
+          "icon",
+          "favicon",
+          "sprite"
+        ]
+      }
+    }
+  },
+  "cleanup": {
+    "decodeHTMLEntities": true,
+    "normalizeWhitespace": true,
+    "removeText": [
+      "Read Manga Online",
+      "Advertisement"
+    ]
+  },
+  "tests": {
+    "query": "one piece",
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}
