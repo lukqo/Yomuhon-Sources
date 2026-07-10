@@ -6,17 +6,19 @@
     {
       "id": "mangakatana_json",
       "name": "MangaKatana JSON",
-      "version": 1,
+      "version": 2,
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangakatana.json",
       "enabled": true,
       "experimental": true,
+      "status": "testing",
       "allowedDomains": [
         "mangakatana.com",
-        "i.mkklcdnv6tempv2.com",
-        "i.mkklcdnv6.com"
-      ]
+        "i.mkklcdnv6.com",
+        "i.mkklcdnv6tempv2.com"
+      ],
+      "notes": "Experimental declarative adapter. Keep native MangaKatana enabled for comparison."
     }
   ]
 }

@@ -8,18 +8,39 @@ Repositorio oficial de configuraciones declarativas para Yomuhon.
 Yomuhon-Sources/
 ├─ index.json
 ├─ sources/
-│  └─ mangakatana.json
-└─ schemas/
-   └─ source-schema-v1.json
+│  ├─ mangakatana.json
+│  └─ templates/
+│     └─ madara-template.json
+├─ schemas/
+│  └─ source-schema-v1.json
+├─ tests/
+│  └─ mangakatana.test.json
+└─ .github/workflows/
+   └─ validate-sources.yml
 ```
+
+## Estados recomendados
+
+- `stable`: usable.
+- `testing`: experimental, necesita revisar.
+- `broken`: existe, pero no se debe activar.
+- `disabled`: apagada desde el índice.
+- `deprecated`: reemplazada por otra fuente.
 
 ## Flujo
 
 1. Yomuhon descarga `index.json`.
-2. La app valida `schemaVersion`, `allowedDomains` y `engineMode`.
-3. La app descarga cada JSON de `sources/`.
-4. Cada fuente debe pasar `Test` antes de considerarse usable.
+2. Lee configs con `enabled: true`.
+3. Valida schema, engine mode y allowed domains.
+4. Cachea configs válidas.
+5. Cada fuente se prueba desde la app con Source Inspector/Test.
 
-## V1
+## Nota
 
-La V1 usa un motor declarativo local dentro de la app. El repo remoto será la siguiente etapa.
+El repo contiene datos y selectores, no código ejecutable remoto.
+
+
+## Docs
+
+- `docs/source-authoring.md`: cómo crear una fuente.
+- `docs/troubleshooting.md`: errores típicos y cómo arreglarlos.

@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 1,
+  "id": "madara_template",
+  "name": "Madara Template",
+  "version": 1,
+  "language": "multi",
+  "baseURL": "https://example.com",
+  "engineMode": "html",
+  "enabledByDefault": false,
+  "experimental": true,
+  "allowedDomains": [
+    "example.com"
+  ],
+  "supports": {
+    "search": true,
+    "popular": true,
+    "details": true,
+    "chapters": true,
+    "pages": true
+  },
+  "network": {
+    "headers": {
+      "User-Agent": "Mozilla/5.0 Yomuhon/1.0",
+      "Referer": "https://example.com/"
+    }
+  },
+  "routes": {
+    "popular": {
+      "path": "/manga/page/{page}",
+      "pagination": {
+        "type": "path",
+        "start": 1,
+        "maxPages": 1
+      }
+    },
+    "search": {
+      "path": "/",
+      "query": {
+        "s": "{{query}}",
+        "post_type": "wp-manga"
+      }
+    }
+  },
+  "selectors": {
+    "search": {
+      "container": ".c-tabs-item__content, .page-item-detail",
+      "title": {
+        "selectors": [
+          ".post-title a",
+          ".h4 a",
+          "a"
+        ],
+        "attrs": [
+          "text"
+        ]
+      },
+      "url": {
+        "selectors": [
+          ".post-title a",
+          ".h4 a",
+          "a"
+        ],
+        "attrs": [
+          "href"
+        ]
+      },
+      "cover": {
+        "selectors": [
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "data-lazy-src",
+          "src"
+        ]
+      }
+    },
+    "details": {
+      "title": {
+        "selectors": [
+          ".post-title h1",
+          "h1",
+          "meta[property='og:title']"
+        ],
+        "attrs": [
+          "text",
+          "content"
+        ]
+      },
+      "synopsis": {
+        "selectors": [
+          ".description-summary",
+          ".summary__content",
+          "meta[property='og:description']"
+        ],
+        "attrs": [
+          "text",
+          "content"
+        ]
+      },
+      "cover": {
+        "selectors": [
+          ".summary_image img",
+          "meta[property='og:image']",
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "src",
+          "content"
+        ]
+      }
+    },
+    "chapters": {
+      "container": ".wp-manga-chapter a, .listing-chapters_wrap a",
+      "title": {
+        "attrs": [
+          "text"
+        ]
+      },
+      "url": {
+        "attrs": [
+          "href"
+        ]
+      },
+      "number": {
+        "from": "text",
+        "regex": "([0-9]+(?:\\.[0-9]+)?)"
+      },
+      "sort": "numberAscending"
+    },
+    "pages": {
+      "extractors": [
+        {
+          "type": "css",
+          "selector": ".reading-content img, .page-break img",
+          "attrs": [
+            "data-src",
+            "data-lazy-src",
+            "src"
+          ]
+        }
+      ],
+      "filters": {
+        "mustContain": [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".webp"
+        ],
+        "blockContains": [
+          "logo",
+          "banner",
+          "ads"
+        ]
+      }
+    }
+  }
+}

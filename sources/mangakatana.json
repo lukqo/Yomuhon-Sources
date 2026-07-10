@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mangakatana_json",
   "name": "MangaKatana JSON",
-  "version": 1,
+  "version": 2,
   "language": "en",
   "baseURL": "https://mangakatana.com",
   "engineMode": "html",
@@ -10,8 +10,8 @@
   "experimental": true,
   "allowedDomains": [
     "mangakatana.com",
-    "i.mkklcdnv6tempv2.com",
-    "i.mkklcdnv6.com"
+    "i.mkklcdnv6.com",
+    "i.mkklcdnv6tempv2.com"
   ],
   "supports": {
     "search": true,
