@@ -33,7 +33,9 @@ Yomuhon-Sources/
 2. Lee configs con `enabled: true`.
 3. Valida schema, engine mode y allowed domains.
 4. Cachea configs válidas.
-5. Cada fuente se prueba desde la app con Source Inspector/Test.
+5. La app actualiza el catálogo y comprueba salud automáticamente cada 12 horas.
+6. Una fuente se pausa solo después de fallos consecutivos y se reactiva sola al recuperarse.
+7. El botón **Diagnosticar todas** queda como herramienta manual de depuración, no como requisito para leer.
 
 ## Nota
 
