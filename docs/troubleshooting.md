@@ -1,44 +1,56 @@
 # Troubleshooting Sources
 
-## Search devuelve `[Cover]`
+## La acción falla antes de conectarse al sitio
 
-El selector de `title` está tomando texto de una imagen. Revisa:
+Ejecuta:
 
-```json
-"title": {
-  "selectors": [".title a", "h3 a", "a"],
-  "attrs": ["text", "title"]
-}
+```bash
+python3 scripts/validate_sources.py
 ```
 
-Evita contenedores demasiado amplios como `a[href*='/manga/']` si la web tiene links a capítulos mezclados.
+Los errores más comunes son ids o versiones distintos entre `index.json` y `sources/*.json`, dominios ausentes, capacidades sin ruta/selector o sintaxis CSS no soportada.
+
+## Search devuelve `[Cover]`
+
+La búsqueda está tomando el texto alternativo de una portada. Prefiere un contenedor de resultado completo o deja que el título se reconstruya desde la URL. También puedes retirar marcadores mediante `cleanup.removeText`.
 
 ## Search devuelve capítulos como mangas
 
-Ajusta el selector de contenedor o usa canonicalización desde URL. El ideal es que el resultado sea:
+Haz más específico el `container`. La URL canónica del manga debe terminar en algo como:
 
 ```text
 /manga/title.123
 ```
 
-no:
+y no en:
 
 ```text
 /manga/title.123/c1
+/chapters/123/title-chapter-1
 ```
 
-## No hay portada
+## No hay capítulos
 
-Agrega más attrs:
-
-```json
-"attrs": ["data-src", "data-original", "data-lazy-src", "src", "content"]
-```
+Comprueba que los enlaces estén en el HTML inicial. Una lista renderizada exclusivamente con JavaScript no funciona con el motor declarativo actual.
 
 ## No hay páginas
 
-Revisa si la web usa lazy loading, srcset, scripts o CDN diferente. Agrega dominios de imágenes a `allowedDomains`.
+Revisa lazy loading y `srcset`. Usa más de un atributo cuando sea necesario:
 
-## Cloudflare / CAPTCHA
+```json
+"attrs": ["data-src", "data-original", "data-lazy-src", "srcset", "src"]
+```
 
-No intentes bypass. Marca fuente como `broken` o usa un adapter nativo controlado.
+Agrega el CDN a `allowedDomains` y bloquea logos, banners, avatares y anuncios mediante `filters.blockContains`.
+
+## La imagen existe, pero el workflow no puede abrirla
+
+Algunos CDN exigen `Referer` o un `User-Agent`. Decláralos en `network.headers`. No intentes saltar CAPTCHA ni protecciones anti-bot.
+
+## El sitio funciona en navegador, pero falla en GitHub Actions
+
+Puede estar bloqueando rangos de IP de centros de datos. Mantén la fuente en `testing` o `broken`; no la marques como `stable` basándote únicamente en una prueba local.
+
+## Cloudflare o CAPTCHA
+
+No intentes evasión. Usa un adaptador nativo controlado o marca la fuente como `broken`.
