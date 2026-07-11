@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-10",
+  "updatedAt": "2026-07-11",
   "minimumAppVersion": "1.0.0",
   "sources": [
     {
@@ -23,7 +23,7 @@
     {
       "id": "mangapill_json",
       "name": "MangaPill JSON",
-      "version": 1,
+      "version": 2,
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangapill.json",
@@ -32,9 +32,10 @@
       "status": "testing",
       "allowedDomains": [
         "mangapill.com",
-        "cdn.mangapill.com"
+        "cdn.mangapill.com",
+        "cdn.readdetectiveconan.com"
       ],
-      "notes": "Discovered remotely but never enabled by default. Yomuhon activates it only after search, chapters and pages pass the local diagnostic."
+      "notes": "Discovered remotely but never enabled by default. Yomuhon activates it only after search, chapters, pages and a real image pass the local diagnostic."
     }
   ]
 }

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mangapill_json",
   "name": "MangaPill JSON",
-  "version": 1,
+  "version": 2,
   "language": "en",
   "baseURL": "https://mangapill.com",
   "engineMode": "html",
@@ -10,7 +10,8 @@
   "experimental": true,
   "allowedDomains": [
     "mangapill.com",
-    "cdn.mangapill.com"
+    "cdn.mangapill.com",
+    "cdn.readdetectiveconan.com"
   ],
   "supports": {
     "search": true,
@@ -38,92 +39,42 @@
     "search": {
       "container": "a[href*='/manga/']",
       "title": {
-        "attrs": [
-          "title",
-          "text"
-        ],
-        "cleanup": [
-          "decodeEntities",
-          "normalizeWhitespace"
-        ]
+        "attrs": ["title", "text"],
+        "cleanup": ["decodeEntities", "normalizeWhitespace"]
       },
       "url": {
-        "attrs": [
-          "href"
-        ],
+        "attrs": ["href"],
         "required": true
       },
       "cover": {
-        "selectors": [
-          "img"
-        ],
-        "attrs": [
-          "data-src",
-          "data-original",
-          "data-lazy-src",
-          "src"
-        ]
+        "selectors": ["img"],
+        "attrs": ["data-src", "data-original", "data-lazy-src", "src"]
       }
     },
     "details": {
       "title": {
-        "selectors": [
-          "h1",
-          "meta[property='og:title']"
-        ],
-        "attrs": [
-          "text",
-          "content"
-        ],
-        "cleanup": [
-          "decodeEntities",
-          "normalizeWhitespace"
-        ]
+        "selectors": ["h1", "meta[property='og:title']"],
+        "attrs": ["text", "content"],
+        "cleanup": ["decodeEntities", "normalizeWhitespace"]
       },
       "synopsis": {
-        "selectors": [
-          "meta[name='description']",
-          "meta[property='og:description']"
-        ],
-        "attrs": [
-          "content"
-        ],
-        "cleanup": [
-          "stripHTML",
-          "decodeEntities",
-          "normalizeWhitespace"
-        ]
+        "selectors": ["meta[name='description']", "meta[property='og:description']"],
+        "attrs": ["content"],
+        "cleanup": ["stripHTML", "decodeEntities", "normalizeWhitespace"]
       },
       "cover": {
-        "selectors": [
-          "meta[property='og:image']",
-          "img"
-        ],
-        "attrs": [
-          "content",
-          "data-src",
-          "data-original",
-          "data-lazy-src",
-          "src"
-        ]
+        "selectors": ["meta[property='og:image']", "img"],
+        "attrs": ["content", "data-src", "data-original", "data-lazy-src", "src"]
       }
     },
     "chapters": {
       "container": "a[href*='/chapters/']",
       "title": {
-        "attrs": [
-          "text",
-          "title"
-        ],
-        "cleanup": [
-          "decodeEntities",
-          "normalizeWhitespace"
-        ]
+        "attrs": ["text", "title"],
+        "cleanup": ["decodeEntities", "normalizeWhitespace"]
       },
       "url": {
-        "attrs": [
-          "href"
-        ],
+        "attrs": ["href"],
         "required": true
       },
       "number": {
@@ -137,48 +88,23 @@
         {
           "type": "css",
           "selector": "img[alt*='Page'], img[src*='cdn.mangapill.com']",
-          "attrs": [
-            "data-src",
-            "data-original",
-            "data-lazy-src",
-            "srcset",
-            "src"
-          ]
+          "attrs": ["data-src", "data-original", "data-lazy-src", "srcset", "src"]
         },
         {
           "type": "regex",
-          "pattern": "(https?:\\\\?/\\\\?/[^\\\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\\\"']*)?)"
+          "pattern": "(https?:\\\\?/\\\\?/[^\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\"']*)?)"
         }
       ],
       "filters": {
-        "mustContain": [
-          ".jpg",
-          ".jpeg",
-          ".png",
-          ".webp"
-        ],
-        "blockContains": [
-          "logo",
-          "avatar",
-          "placeholder",
-          "banner",
-          "ads/",
-          "icon",
-          "favicon",
-          "sprite",
-          "doubleclick",
-          "analytics"
-        ]
+        "mustContain": [".jpg", ".jpeg", ".png", ".webp"],
+        "blockContains": ["logo", "avatar", "placeholder", "banner", "ads/", "icon", "favicon", "sprite", "doubleclick", "analytics"]
       }
     }
   },
   "cleanup": {
     "decodeHTMLEntities": true,
     "normalizeWhitespace": true,
-    "removeText": [
-      "Read Manga Online",
-      "Advertisement"
-    ]
+    "removeText": ["Read Manga Online", "Advertisement"]
   },
   "tests": {
     "query": "hime no dameshi",
