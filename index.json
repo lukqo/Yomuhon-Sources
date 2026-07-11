@@ -4,6 +4,22 @@
   "minimumAppVersion": "1.0.0",
   "sources": [
     {
+      "id": "mangadex",
+      "name": "MangaDex",
+      "version": 2,
+      "language": "multi",
+      "kind": "declarative-json-api",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangadex.json",
+      "enabled": true,
+      "experimental": false,
+      "status": "stable",
+      "allowedDomains": [
+        "api.mangadex.org",
+        "uploads.mangadex.org"
+      ],
+      "notes": "JSON API source with response-driven pagination executed by Yomuhon's generic declarative runtime."
+    },
+    {
       "id": "mangakatana_json",
       "name": "MangaKatana JSON",
       "version": 3,
@@ -15,15 +31,15 @@
       "status": "testing",
       "allowedDomains": [
         "mangakatana.com",
-        "i.mkklcdnv6.com",
-        "i.mkklcdnv6tempv2.com"
+        "i.mkklcdnv6tempv2.com",
+        "i.mkklcdnv6.com"
       ],
-      "notes": "Declarative adapter under continuous live verification. It remains inactive in the app until the full diagnostic passes."
+      "notes": "Declarative HTML source."
     },
     {
       "id": "mangapill_json",
       "name": "MangaPill JSON",
-      "version": 2,
+      "version": 3,
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangapill.json",
@@ -35,7 +51,7 @@
         "cdn.mangapill.com",
         "cdn.readdetectiveconan.com"
       ],
-      "notes": "Discovered remotely but never enabled by default. Yomuhon activates it only after search, chapters, pages and a real image pass the local diagnostic."
+      "notes": "Declarative HTML source."
     }
   ]
 }

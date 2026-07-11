@@ -1,69 +1,13 @@
-# Source Authoring Guide
+# Source authoring
 
-Este documento define cómo crear una fuente declarativa para Yomuhon.
+Una fuente usa `engineMode: html` o `engineMode: json-api`.
 
-## Principios
+`html` define `routes` y `selectors`. `json-api` define `api.search`, `api.chapters` y `api.pages`. Las rutas API solo aceptan GET en schema v1. Los templates disponibles son `{{query}}`, `{mangaID}`, `{chapterID}`, `{{languages}}`, `{baseURL}`, `{hash}` y `{item}` según la operación.
 
-- El JSON contiene datos y selectores; nunca código ejecutable.
-- Toda fuente remota debe usar `enabledByDefault: false`.
-- Cada host de navegación o imágenes debe figurar en `allowedDomains`.
-- Los selectores deben ser compatibles con el motor simple de Yomuhon.
-- Una búsqueda válida no basta: la fuente debe entregar capítulos y páginas reales.
-- Sitios que exigen login, CAPTCHA fuerte, JavaScript complejo o evasión de protecciones no son candidatos para `declarative-html`.
+## Paginación JSON API
 
-## Selectores compatibles
+Las operaciones de capítulos pueden declarar `pagination` con `offsetParam`, `limitParam` y `limit`. El runtime continúa pidiendo páginas mientras la API entregue IDs nuevos. Se detiene cuando la página viene vacía, trae menos elementos que `limit`, alcanza `totalPath`, repite una página o deja de entregar IDs nuevos.
 
-El motor admite:
+`maxItems` es solo un techo defensivo contra una configuración o API defectuosa; no representa la cantidad normal de capítulos. `maxPages` sigue aceptándose únicamente por compatibilidad con configuraciones cacheadas antiguas y no se recomienda para fuentes nuevas.
 
-```text
-tag
-.clase
-#id
-tag.clase
-tag[attr]
-tag[attr='valor']
-tag[attr*='fragmento']
-descendiente descendiente
-selector, selector
-```
-
-No uses pseudoclases, `+`, `~` ni selectores que dependan de ejecución JavaScript.
-
-## Checklist antes de publicar
-
-```text
-[ ] index.json incluye la fuente
-[ ] source id coincide entre índice, config y test
-[ ] versión coincide entre índice y config
-[ ] baseURL usa HTTPS
-[ ] allowedDomains incluye baseURL y CDN de imágenes
-[ ] enabledByDefault = false
-[ ] search devuelve mangas, no capítulos
-[ ] details conserva una URL canónica del manga
-[ ] chapters devuelve enlaces de capítulos reales
-[ ] pages devuelve imágenes reales, no logos ni anuncios
-[ ] tests/<id>.test.json existe
-[ ] python scripts/validate_sources.py pasa
-[ ] python scripts/validate_sources.py --live --source <id> pasa
-[ ] status = testing hasta probarla dentro de Yomuhon
-```
-
-## Estados
-
-- `stable`: probada en el workflow y en la app.
-- `testing`: definición disponible para diagnóstico.
-- `broken`: falla y el índice impide cargarla.
-- `disabled`: retirada temporalmente.
-- `deprecated`: reemplazada.
-
-## Activación en la app
-
-`index.enabled: true` solo permite que Yomuhon descubra la definición. No la activa para búsquedas reales. Las fuentes remotas nacen pausadas y el diagnóstico local debe confirmar:
-
-1. búsqueda con resultados;
-2. detalle accesible;
-3. capítulos no vacíos;
-4. páginas no vacías;
-5. primera imagen descargable.
-
-Por eso una fuente experimental puede permanecer en `testing` sin poner en riesgo el catálogo principal.
+Toda fuente debe declarar `allowedDomains`, subir su `version` al cambiar y tener un smoke test con resultados, capítulos y páginas reales.

@@ -3,223 +3,48 @@
   "$id": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/schemas/source-schema-v1.json",
   "title": "Yomuhon Declarative Source Config V1",
   "type": "object",
-  "required": [
-    "schemaVersion",
-    "id",
-    "name",
-    "version",
-    "language",
-    "baseURL",
-    "engineMode",
-    "enabledByDefault",
-    "experimental",
-    "allowedDomains",
-    "supports",
-    "routes",
-    "selectors"
-  ],
+  "required": ["schemaVersion", "id", "name", "version", "language", "baseURL", "engineMode", "enabledByDefault", "experimental", "allowedDomains", "supports", "routes", "selectors"],
   "properties": {
-    "schemaVersion": { "type": "integer", "const": 1 },
-    "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$" },
-    "name": { "type": "string", "minLength": 1 },
-    "version": { "type": "integer", "minimum": 1 },
-    "language": { "type": "string", "minLength": 2 },
-    "baseURL": { "type": "string", "format": "uri", "pattern": "^https://" },
-    "engineMode": { "enum": ["html", "json-api"] },
-    "enabledByDefault": { "type": "boolean", "const": false },
-    "experimental": { "type": "boolean" },
-    "allowedDomains": {
-      "type": "array",
-      "minItems": 1,
-      "uniqueItems": true,
-      "items": { "type": "string", "pattern": "^[A-Za-z0-9.-]+$" }
-    },
+    "schemaVersion": {"type": "integer", "const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9_-]*$"},
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "integer", "minimum": 1},
+    "language": {"type": "string", "minLength": 2},
+    "baseURL": {"type": "string", "format": "uri", "pattern": "^https://"},
+    "engineMode": {"enum": ["html", "json-api"]},
+    "enabledByDefault": {"type": "boolean", "const": false},
+    "experimental": {"type": "boolean"},
+    "allowedDomains": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[A-Za-z0-9.-]+$"}},
     "supports": {
       "type": "object",
       "required": ["search", "popular", "details", "chapters", "pages"],
       "properties": {
-        "search": { "type": "boolean" },
-        "popular": { "type": "boolean" },
-        "details": { "type": "boolean" },
-        "chapters": { "type": "boolean" },
-        "pages": { "type": "boolean" }
+        "search": {"type": "boolean"}, "popular": {"type": "boolean"}, "details": {"type": "boolean"},
+        "chapters": {"type": "boolean"}, "pages": {"type": "boolean"}
       },
       "additionalProperties": false
     },
-    "network": {
-      "type": "object",
-      "properties": {
-        "headers": {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
-        }
-      },
-      "additionalProperties": false
-    },
-    "routes": {
-      "type": "object",
-      "properties": {
-        "popular": { "$ref": "#/$defs/route" },
-        "search": { "$ref": "#/$defs/route" }
-      },
-      "additionalProperties": false
-    },
-    "selectors": {
-      "type": "object",
-      "properties": {
-        "popular": { "$ref": "#/$defs/listSelector" },
-        "search": { "$ref": "#/$defs/listSelector" },
-        "details": { "$ref": "#/$defs/detailSelector" },
-        "chapters": { "$ref": "#/$defs/chapterSelector" },
-        "pages": { "$ref": "#/$defs/pagesSelector" }
-      },
-      "additionalProperties": false
-    },
-    "cleanup": {
-      "type": "object",
-      "properties": {
-        "decodeHTMLEntities": { "type": "boolean" },
-        "normalizeWhitespace": { "type": "boolean" },
-        "removeText": {
-          "type": "array",
-          "items": { "type": "string" }
-        }
-      },
-      "additionalProperties": false
-    },
-    "tests": {
-      "type": "object",
-      "required": ["query", "minSearchResults", "minChapters", "minPages"],
-      "properties": {
-        "query": { "type": "string", "minLength": 1 },
-        "minSearchResults": { "type": "integer", "minimum": 1 },
-        "minChapters": { "type": "integer", "minimum": 1 },
-        "minPages": { "type": "integer", "minimum": 1 }
-      },
-      "additionalProperties": false
-    }
+    "network": {"type": "object", "properties": {"headers": {"type": "object", "additionalProperties": {"type": "string"}}}, "additionalProperties": false},
+    "routes": {"type": "object", "properties": {"popular": {"$ref": "#/$defs/route"}, "search": {"$ref": "#/$defs/route"}}, "additionalProperties": false},
+    "selectors": {"type": "object", "properties": {"popular": {"$ref": "#/$defs/listSelector"}, "search": {"$ref": "#/$defs/listSelector"}, "details": {"$ref": "#/$defs/detailSelector"}, "chapters": {"$ref": "#/$defs/chapterSelector"}, "pages": {"$ref": "#/$defs/pagesSelector"}}, "additionalProperties": false},
+    "api": {"$ref": "#/$defs/apiConfig"},
+    "cleanup": {"type": "object", "properties": {"decodeHTMLEntities": {"type": "boolean"}, "normalizeWhitespace": {"type": "boolean"}, "removeText": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false},
+    "tests": {"type": "object", "required": ["query", "minSearchResults", "minChapters", "minPages"], "properties": {"query": {"type": "string", "minLength": 1}, "minSearchResults": {"type": "integer", "minimum": 1}, "minChapters": {"type": "integer", "minimum": 1}, "minPages": {"type": "integer", "minimum": 1}}, "additionalProperties": false}
   },
   "$defs": {
-    "route": {
-      "type": "object",
-      "required": ["path"],
-      "properties": {
-        "path": { "type": "string", "pattern": "^/" },
-        "query": {
-          "type": "object",
-          "additionalProperties": { "type": "string" }
-        },
-        "pagination": {
-          "type": "object",
-          "required": ["type"],
-          "properties": {
-            "type": { "enum": ["path", "query"] },
-            "param": { "type": "string" },
-            "start": { "type": "integer", "minimum": 0 },
-            "maxPages": { "type": "integer", "minimum": 1, "maximum": 5 }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
-    "fieldSelector": {
-      "type": "object",
-      "properties": {
-        "selectors": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string", "minLength": 1 }
-        },
-        "selector": { "type": "string", "minLength": 1 },
-        "attrs": {
-          "type": "array",
-          "minItems": 1,
-          "items": { "type": "string", "minLength": 1 }
-        },
-        "attr": { "type": "string", "minLength": 1 },
-        "regex": { "type": "string", "minLength": 1 },
-        "required": { "type": "boolean" },
-        "cleanup": {
-          "type": "array",
-          "items": { "enum": ["stripHTML", "decodeEntities", "normalizeWhitespace", "trim"] }
-        }
-      },
-      "additionalProperties": false
-    },
-    "listSelector": {
-      "type": "object",
-      "required": ["container", "title", "url"],
-      "properties": {
-        "container": { "type": "string", "minLength": 1 },
-        "title": { "$ref": "#/$defs/fieldSelector" },
-        "url": { "$ref": "#/$defs/fieldSelector" },
-        "cover": { "$ref": "#/$defs/fieldSelector" }
-      },
-      "additionalProperties": false
-    },
-    "detailSelector": {
-      "type": "object",
-      "properties": {
-        "title": { "$ref": "#/$defs/fieldSelector" },
-        "synopsis": { "$ref": "#/$defs/fieldSelector" },
-        "cover": { "$ref": "#/$defs/fieldSelector" }
-      },
-      "additionalProperties": false
-    },
-    "chapterSelector": {
-      "type": "object",
-      "required": ["container", "url"],
-      "properties": {
-        "container": { "type": "string", "minLength": 1 },
-        "title": { "$ref": "#/$defs/fieldSelector" },
-        "url": { "$ref": "#/$defs/fieldSelector" },
-        "number": {
-          "type": "object",
-          "required": ["from", "regex"],
-          "properties": {
-            "from": { "enum": ["text", "url"] },
-            "regex": { "type": "string", "minLength": 1 }
-          },
-          "additionalProperties": false
-        },
-        "sort": { "enum": ["numberAscending", "numberDescending"] }
-      },
-      "additionalProperties": false
-    },
-    "pagesSelector": {
-      "type": "object",
-      "required": ["extractors"],
-      "properties": {
-        "extractors": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "object",
-            "required": ["type"],
-            "properties": {
-              "type": { "enum": ["css", "regex"] },
-              "selector": { "type": "string" },
-              "attrs": {
-                "type": "array",
-                "items": { "type": "string" }
-              },
-              "pattern": { "type": "string" }
-            },
-            "additionalProperties": false
-          }
-        },
-        "filters": {
-          "type": "object",
-          "properties": {
-            "mustContain": { "type": "array", "items": { "type": "string" } },
-            "blockContains": { "type": "array", "items": { "type": "string" } }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    }
+    "route": {"type": "object", "required": ["path"], "properties": {"path": {"type": "string", "pattern": "^/"}, "query": {"type": "object", "additionalProperties": {"type": "string"}}, "pagination": {"type": "object", "required": ["type"], "properties": {"type": {"enum": ["path", "query"]}, "param": {"type": "string"}, "start": {"type": "integer", "minimum": 0}, "maxPages": {"type": "integer", "minimum": 1, "maximum": 5}}, "additionalProperties": false}}, "additionalProperties": false},
+    "fieldSelector": {"type": "object", "properties": {"selectors": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}, "selector": {"type": "string", "minLength": 1}, "attrs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}, "attr": {"type": "string", "minLength": 1}, "regex": {"type": "string", "minLength": 1}, "required": {"type": "boolean"}, "cleanup": {"type": "array", "items": {"enum": ["stripHTML", "decodeEntities", "normalizeWhitespace", "trim"]}}}, "additionalProperties": false},
+    "listSelector": {"type": "object", "required": ["container", "title", "url"], "properties": {"container": {"type": "string", "minLength": 1}, "title": {"$ref": "#/$defs/fieldSelector"}, "url": {"$ref": "#/$defs/fieldSelector"}, "cover": {"$ref": "#/$defs/fieldSelector"}}, "additionalProperties": false},
+    "detailSelector": {"type": "object", "properties": {"title": {"$ref": "#/$defs/fieldSelector"}, "synopsis": {"$ref": "#/$defs/fieldSelector"}, "cover": {"$ref": "#/$defs/fieldSelector"}}, "additionalProperties": false},
+    "chapterSelector": {"type": "object", "required": ["container", "url"], "properties": {"container": {"type": "string", "minLength": 1}, "title": {"$ref": "#/$defs/fieldSelector"}, "url": {"$ref": "#/$defs/fieldSelector"}, "number": {"type": "object", "required": ["from", "regex"], "properties": {"from": {"enum": ["text", "url"]}, "regex": {"type": "string", "minLength": 1}}, "additionalProperties": false}, "sort": {"enum": ["numberAscending", "numberDescending"]}}, "additionalProperties": false},
+    "pagesSelector": {"type": "object", "required": ["extractors"], "properties": {"extractors": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["type"], "properties": {"type": {"enum": ["css", "regex"]}, "selector": {"type": "string"}, "attrs": {"type": "array", "items": {"type": "string"}}, "pattern": {"type": "string"}}, "additionalProperties": false}}, "filters": {"type": "object", "properties": {"mustContain": {"type": "array", "items": {"type": "string"}}, "blockContains": {"type": "array", "items": {"type": "string"}}}, "additionalProperties": false}}, "additionalProperties": false},
+    "apiValue": {"oneOf": [{"type": "string"}, {"type": "integer"}, {"type": "boolean"}, {"type": "array", "items": {"type": "string"}}]},
+    "apiRequest": {"type": "object", "required": ["method", "path"], "properties": {"method": {"const": "GET"}, "path": {"type": "string", "pattern": "^/"}, "query": {"type": "object", "additionalProperties": {"$ref": "#/$defs/apiValue"}}}, "additionalProperties": false},
+    "apiPagination": {"type": "object", "required": ["offsetParam", "limitParam", "limit"], "properties": {"offsetParam": {"type": "string", "minLength": 1}, "limitParam": {"type": "string", "minLength": 1}, "limit": {"type": "integer", "minimum": 1, "maximum": 500}, "maxPages": {"type": "integer", "minimum": 1, "maximum": 1000}, "maxItems": {"type": "integer", "minimum": 1, "maximum": 100000}, "totalPath": {"type": "string", "minLength": 1}}, "additionalProperties": false},
+    "apiSearch": {"type": "object", "required": ["request", "itemsPath", "idPath", "titlePaths"], "properties": {"request": {"$ref": "#/$defs/apiRequest"}, "itemsPath": {"type": "string", "minLength": 1}, "idPath": {"type": "string", "minLength": 1}, "titlePaths": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}, "synopsisPaths": {"type": "array", "items": {"type": "string", "minLength": 1}}, "coverRelationshipType": {"type": "string"}, "coverFilePath": {"type": "string"}, "coverTemplate": {"type": "string"}}, "additionalProperties": false},
+    "apiChapters": {"type": "object", "required": ["request", "itemsPath", "idPath", "numberPath"], "properties": {"request": {"$ref": "#/$defs/apiRequest"}, "pagination": {"$ref": "#/$defs/apiPagination"}, "itemsPath": {"type": "string", "minLength": 1}, "idPath": {"type": "string", "minLength": 1}, "numberPath": {"type": "string", "minLength": 1}, "titlePath": {"type": "string"}, "languagePath": {"type": "string"}, "sort": {"enum": ["numberAscending", "numberDescending"]}}, "additionalProperties": false},
+    "apiPages": {"type": "object", "required": ["request", "baseURLPath", "hashPath", "itemsPath", "urlTemplate"], "properties": {"request": {"$ref": "#/$defs/apiRequest"}, "baseURLPath": {"type": "string", "minLength": 1}, "hashPath": {"type": "string", "minLength": 1}, "itemsPath": {"type": "string", "minLength": 1}, "urlTemplate": {"type": "string", "minLength": 1}}, "additionalProperties": false},
+    "apiConfig": {"type": "object", "properties": {"search": {"$ref": "#/$defs/apiSearch"}, "chapters": {"$ref": "#/$defs/apiChapters"}, "pages": {"$ref": "#/$defs/apiPages"}}, "additionalProperties": false}
   },
   "additionalProperties": false
 }

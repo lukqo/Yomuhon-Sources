@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "id": "mangadex",
+  "name": "MangaDex",
+  "version": 2,
+  "language": "multi",
+  "baseURL": "https://api.mangadex.org",
+  "engineMode": "json-api",
+  "enabledByDefault": false,
+  "experimental": false,
+  "allowedDomains": [
+    "api.mangadex.org",
+    "uploads.mangadex.org"
+  ],
+  "supports": {
+    "search": true,
+    "popular": false,
+    "details": true,
+    "chapters": true,
+    "pages": true
+  },
+  "network": {
+    "headers": {
+      "Accept": "application/json",
+      "User-Agent": "Yomuhon/1.0"
+    }
+  },
+  "routes": {},
+  "selectors": {},
+  "api": {
+    "search": {
+      "request": {
+        "method": "GET",
+        "path": "/manga",
+        "query": {
+          "title": "{{query}}",
+          "includes[]": [
+            "cover_art"
+          ],
+          "limit": 20,
+          "order[relevance]": "desc"
+        }
+      },
+      "itemsPath": "data",
+      "idPath": "id",
+      "titlePaths": [
+        "attributes.title.en",
+        "attributes.title.es",
+        "attributes.title.ja-ro",
+        "attributes.title.ja"
+      ],
+      "synopsisPaths": [
+        "attributes.description.en",
+        "attributes.description.es"
+      ],
+      "coverRelationshipType": "cover_art",
+      "coverFilePath": "attributes.fileName",
+      "coverTemplate": "https://uploads.mangadex.org/covers/{mangaID}/{value}.256.jpg"
+    },
+    "chapters": {
+      "request": {
+        "method": "GET",
+        "path": "/manga/{mangaID}/feed",
+        "query": {
+          "translatedLanguage[]": "{{languages}}",
+          "order[chapter]": "asc",
+          "includeFutureUpdates": "0",
+          "includeEmptyPages": "0",
+          "includeUnavailable": "0"
+        }
+      },
+      "pagination": {
+        "offsetParam": "offset",
+        "limitParam": "limit",
+        "limit": 100,
+        "maxItems": 10000,
+        "totalPath": "total"
+      },
+      "itemsPath": "data",
+      "idPath": "id",
+      "numberPath": "attributes.chapter",
+      "titlePath": "attributes.title",
+      "languagePath": "attributes.translatedLanguage",
+      "sort": "numberAscending"
+    },
+    "pages": {
+      "request": {
+        "method": "GET",
+        "path": "/at-home/server/{chapterID}",
+        "query": {}
+      },
+      "baseURLPath": "baseUrl",
+      "hashPath": "chapter.hash",
+      "itemsPath": "chapter.data",
+      "urlTemplate": "{baseURL}/data/{hash}/{item}"
+    }
+  },
+  "cleanup": {
+    "decodeHTMLEntities": true,
+    "normalizeWhitespace": true,
+    "removeText": []
+  },
+  "tests": {
+    "query": "berserk",
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}

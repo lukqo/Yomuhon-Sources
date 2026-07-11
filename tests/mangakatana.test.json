@@ -1,19 +1,17 @@
 {
   "sourceID": "mangakatana_json",
   "queries": [
-    "one piece",
-    "otonari",
-    "kenja no mago"
+    "one piece"
   ],
-  "expected": {
-    "minSearchResults": 1,
-    "minChapters": 1,
-    "minPages": 1
-  },
   "probe": {
     "query": "one piece",
     "expectedTitleContains": "One Piece",
     "mangaPathContains": "/manga/",
     "chapterPathContains": "/c"
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
   }
 }

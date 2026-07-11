@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""Static and live validation for the Yomuhon declarative source repository."""
-
+"""Static and live validation for Yomuhon declarative sources."""
 from __future__ import annotations
 
 import argparse
@@ -10,7 +9,7 @@ import json
 import re
 import sys
 import time
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import parse_qsl, urlencode, urljoin, urlparse, urlunparse
@@ -21,12 +20,8 @@ SOURCE_DIR = ROOT / "sources"
 TEST_DIR = ROOT / "tests"
 SCHEMA_PATH = ROOT / "schemas" / "source-schema-v1.json"
 INDEX_SCHEMA_PATH = ROOT / "schemas" / "index-schema-v1.json"
-
 ALLOWED_STATUSES = {"stable", "testing", "broken", "disabled", "deprecated"}
-ALLOWED_ENGINE_MODES = {"html", "json-api"}
 SOURCE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]*$")
-CHAPTER_TITLE_RE = re.compile(r"^(?:chapter|ch\.?)\s*[0-9]+(?:\.[0-9]+)?(?:\s|:|-|$)", re.I)
-CHAPTER_PATH_RE = re.compile(r"^(?:c|ch(?:apter)?[-_ ]?)[0-9]+(?:\.[0-9]+)?$", re.I)
 IMAGE_EXT_RE = re.compile(r"\.(?:jpe?g|png|webp)(?:$|\?)", re.I)
 
 
@@ -41,8 +36,6 @@ class SourceReport:
     search_results: int = 0
     chapters: int = 0
     pages: int = 0
-    manga_url: str | None = None
-    chapter_url: str | None = None
     image_url: str | None = None
     elapsed_seconds: float = 0.0
     error: str | None = None
@@ -62,24 +55,109 @@ def domain_matches(host: str, allowed: Iterable[str]) -> bool:
     return any(host == item.lower().strip(".") or host.endswith("." + item.lower().strip(".")) for item in allowed)
 
 
-def assert_supported_selector(selector: str, context: str) -> None:
-    # Colons inside attribute values (for example og:title) are valid.
-    without_attributes = re.sub(r"\[[^\]]*\]", "", selector)
-    if ":" in without_attributes or "+" in without_attributes or "~" in without_attributes:
-        raise ValidationError(f"{context}: selector uses syntax unsupported by the app engine: {selector!r}")
+def json_path(root: Any, path: str) -> Any:
+    current = root
+    clean = path.removeprefix("$.").strip("$")
+    if not clean:
+        return current
+    for component in clean.split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(component)
+    return current
 
 
-def iter_field_selectors(value: Any) -> Iterable[str]:
-    if not isinstance(value, dict):
-        return
-    selectors = value.get("selectors")
-    if isinstance(selectors, list):
-        for selector in selectors:
-            if isinstance(selector, str):
-                yield selector
-    selector = value.get("selector")
-    if isinstance(selector, str):
-        yield selector
+def expand(value: str, variables: dict[str, str]) -> str:
+    for key, replacement in variables.items():
+        value = value.replace("{" + key + "}", replacement).replace("{{" + key + "}}", replacement)
+    return value
+
+
+def request_session() -> Any:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    session = requests.Session()
+    retry = Retry(total=2, connect=2, read=2, status=2, backoff_factor=0.75,
+                  status_forcelist=(408, 425, 429, 500, 502, 503, 504),
+                  allowed_methods=frozenset({"GET", "HEAD"}), respect_retry_after_header=True)
+    session.mount("https://", HTTPAdapter(max_retries=retry))
+    return session
+
+
+def request_json(session: Any, config: dict[str, Any], request: dict[str, Any], variables: dict[str, str], arrays: dict[str, list[str]], timeout: float, extra: list[tuple[str, str]] | None = None) -> Any:
+    url = urljoin(config["baseURL"].rstrip("/") + "/", expand(request["path"], variables).lstrip("/"))
+    host = urlparse(url).hostname or ""
+    if not domain_matches(host, config["allowedDomains"]):
+        raise ValidationError(f"Blocked API host: {host}")
+    query: list[tuple[str, str]] = list(extra or [])
+    for key, raw in (request.get("query") or {}).items():
+        if isinstance(raw, str) and raw == "{{languages}}":
+            query.extend((key, item) for item in arrays.get("languages", []))
+        elif isinstance(raw, list):
+            query.extend((key, expand(str(item), variables)) for item in raw)
+        elif isinstance(raw, bool):
+            query.append((key, "true" if raw else "false"))
+        else:
+            query.append((key, expand(str(raw), variables)))
+    headers = {"Accept": "application/json", "User-Agent": "YomuhonSourceValidator/2.0", **((config.get("network") or {}).get("headers") or {})}
+    response = session.get(url, params=query, headers=headers, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
+
+
+def paginate_api(session: Any, config: dict[str, Any], operation: dict[str, Any], variables: dict[str, str], arrays: dict[str, list[str]], timeout: float) -> list[Any]:
+    pagination = operation.get("pagination")
+    if not pagination:
+        root = request_json(session, config, operation["request"], variables, arrays, timeout)
+        return json_path(root, operation["itemsPath"]) or []
+
+    limit = pagination["limit"]
+    max_items = min(max(pagination.get("maxItems", 10_000), 1), 100_000)
+    legacy_max_pages = pagination.get("maxPages")
+    seen_ids: set[str] = set()
+    seen_pages: set[tuple[str, ...]] = set()
+    items: list[Any] = []
+    offset = 0
+    page_count = 0
+
+    while len(items) < max_items:
+        if legacy_max_pages is not None and page_count >= legacy_max_pages:
+            break
+        root = request_json(session, config, operation["request"], variables, arrays, timeout,
+                            [(pagination["offsetParam"], str(offset)), (pagination["limitParam"], str(limit))])
+        page = json_path(root, operation["itemsPath"]) or []
+        if not page:
+            break
+        page_ids = tuple(str(json_path(item, operation["idPath"]) or "") for item in page)
+        if page_ids in seen_pages:
+            break
+        seen_pages.add(page_ids)
+        new_items = 0
+        for item in page:
+            item_id = str(json_path(item, operation["idPath"]) or "")
+            if not item_id or item_id in seen_ids:
+                continue
+            seen_ids.add(item_id)
+            items.append(item)
+            new_items += 1
+            if len(items) >= max_items:
+                break
+        if new_items == 0:
+            break
+        total_path = pagination.get("totalPath")
+        total = json_path(root, total_path) if total_path else None
+        if isinstance(total, (int, float)) and len(seen_ids) >= int(total):
+            break
+        if len(page) < limit:
+            break
+        next_offset = offset + limit
+        if next_offset <= offset:
+            break
+        offset = next_offset
+        page_count += 1
+    return items
 
 
 def validate_static() -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
@@ -91,207 +169,158 @@ def validate_static() -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[s
     index = load_json(INDEX_PATH)
     schema = load_json(SCHEMA_PATH)
     index_schema = load_json(INDEX_SCHEMA_PATH)
-    schema_validator = Draft202012Validator(schema)
-    index_validator = Draft202012Validator(index_schema)
-
-    index_errors = sorted(index_validator.iter_errors(index), key=lambda item: list(item.path))
-    if index_errors:
-        rendered = "; ".join(f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in index_errors[:8])
-        raise ValidationError(f"index.json failed schema validation: {rendered}")
-
-    if index.get("schemaVersion") != 1:
-        raise ValidationError("index.json: schemaVersion must be 1")
-    if index.get("minimumAppVersion") is None:
-        raise ValidationError("index.json: minimumAppVersion is required")
+    errors = sorted(Draft202012Validator(index_schema).iter_errors(index), key=lambda item: list(item.path))
+    if errors:
+        raise ValidationError(f"index.json failed schema validation: {errors[0].message}")
     try:
         dt.date.fromisoformat(index.get("updatedAt", ""))
     except ValueError as exc:
         raise ValidationError("index.json: updatedAt must use YYYY-MM-DD") from exc
 
-    entries = index.get("sources")
-    if not isinstance(entries, list) or not entries:
-        raise ValidationError("index.json: sources must be a non-empty array")
-
-    entry_by_id: dict[str, dict[str, Any]] = {}
-    config_by_id: dict[str, dict[str, Any]] = {}
-    test_by_id: dict[str, dict[str, Any]] = {}
-
-    for entry in entries:
-        if not isinstance(entry, dict):
-            raise ValidationError("index.json: every source entry must be an object")
+    validator = Draft202012Validator(schema)
+    configs: dict[str, dict[str, Any]] = {}
+    tests: dict[str, dict[str, Any]] = {}
+    seen: set[str] = set()
+    for entry in index.get("sources", []):
         source_id = entry.get("id")
-        if not isinstance(source_id, str) or not SOURCE_ID_RE.fullmatch(source_id):
-            raise ValidationError(f"index.json: invalid source id {source_id!r}")
-        if source_id in entry_by_id:
-            raise ValidationError(f"index.json: duplicate source id {source_id}")
-        entry_by_id[source_id] = entry
-
-        status = str(entry.get("status", "testing")).lower()
-        if status not in ALLOWED_STATUSES:
-            raise ValidationError(f"{source_id}: invalid status {status!r}")
-        if entry.get("kind") != "declarative-html":
-            raise ValidationError(f"{source_id}: kind must be declarative-html")
-        if not isinstance(entry.get("enabled"), bool):
-            raise ValidationError(f"{source_id}: enabled must be boolean")
-        if not isinstance(entry.get("experimental"), bool):
-            raise ValidationError(f"{source_id}: experimental must be boolean")
-
-        remote_url = entry.get("url")
-        parsed_remote = urlparse(remote_url or "")
-        if parsed_remote.scheme != "https" or not parsed_remote.netloc:
-            raise ValidationError(f"{source_id}: config URL must be HTTPS")
-
-        config_path = SOURCE_DIR / Path(parsed_remote.path).name
+        if not isinstance(source_id, str) or not SOURCE_ID_RE.fullmatch(source_id) or source_id in seen:
+            raise ValidationError(f"Invalid or duplicate source id: {source_id!r}")
+        seen.add(source_id)
+        if entry.get("status") not in ALLOWED_STATUSES:
+            raise ValidationError(f"{source_id}: invalid status")
+        config_path = SOURCE_DIR / Path(urlparse(entry["url"]).path).name
         config = load_json(config_path)
-        config_by_id[source_id] = config
-
-        errors = sorted(schema_validator.iter_errors(config), key=lambda item: list(item.path))
-        if errors:
-            rendered = "; ".join(f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in errors[:8])
+        schema_errors = sorted(validator.iter_errors(config), key=lambda item: list(item.path))
+        if schema_errors:
+            rendered = "; ".join(f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in schema_errors[:8])
             raise ValidationError(f"{config_path.relative_to(ROOT)} failed schema validation: {rendered}")
-
         for key in ("id", "name", "version", "language"):
             if config.get(key) != entry.get(key):
-                raise ValidationError(f"{source_id}: {key} differs between index.json and config")
-
-        if config.get("engineMode") not in ALLOWED_ENGINE_MODES:
-            raise ValidationError(f"{source_id}: unsupported engineMode")
-        if config.get("engineMode") != "html":
-            raise ValidationError(f"{source_id}: the current app only accepts html remote configs")
+                raise ValidationError(f"{source_id}: {key} differs between index and config")
+        mode = config["engineMode"]
+        expected_kind = "declarative-json-api" if mode == "json-api" else "declarative-html"
+        if entry.get("kind") != expected_kind:
+            raise ValidationError(f"{source_id}: kind must be {expected_kind}")
         if config.get("enabledByDefault") is not False:
             raise ValidationError(f"{source_id}: remote sources must remain disabled by default")
-
-        allowed_entry = entry.get("allowedDomains")
-        allowed_config = config.get("allowedDomains")
-        if not isinstance(allowed_entry, list) or not allowed_entry:
-            raise ValidationError(f"{source_id}: index allowedDomains cannot be empty")
-        if not isinstance(allowed_config, list) or not allowed_config:
-            raise ValidationError(f"{source_id}: config allowedDomains cannot be empty")
-        for domain in [*allowed_entry, *allowed_config]:
-            if not isinstance(domain, str) or "/" in domain or ":" in domain or " " in domain:
-                raise ValidationError(f"{source_id}: invalid allowed domain {domain!r}")
-
-        base_host = urlparse(config["baseURL"]).hostname or ""
-        if not domain_matches(base_host, allowed_entry):
-            raise ValidationError(f"{source_id}: baseURL host is not allowed by index.json")
-        for domain in allowed_config:
-            if not domain_matches(domain, allowed_entry):
-                raise ValidationError(f"{source_id}: config domain {domain} is not allowed by index.json")
-
-        supports = config["supports"]
-        routes = config["routes"]
-        selectors = config["selectors"]
-        for capability in ("search", "popular"):
-            if supports.get(capability) and (capability not in routes or capability not in selectors):
-                raise ValidationError(f"{source_id}: {capability} support requires a route and selector")
-        for capability in ("details", "chapters", "pages"):
-            if supports.get(capability) and capability not in selectors:
-                raise ValidationError(f"{source_id}: {capability} support requires selectors.{capability}")
-        if supports.get("pages") and not supports.get("chapters"):
-            raise ValidationError(f"{source_id}: pages support requires chapters support")
-
-        for route_name, route in routes.items():
-            if not isinstance(route, dict):
-                continue
-            path = route.get("path")
-            if not isinstance(path, str) or not path.startswith("/"):
-                raise ValidationError(f"{source_id}: routes.{route_name}.path must start with /")
-
-        for section_name, section in selectors.items():
-            if not isinstance(section, dict):
-                continue
-            container = section.get("container")
-            if isinstance(container, str):
-                assert_supported_selector(container, f"{source_id}.selectors.{section_name}.container")
-            for field_name, field in section.items():
-                if field_name in {"container", "sort", "filters", "extractors", "number"}:
-                    continue
-                for selector in iter_field_selectors(field):
-                    assert_supported_selector(selector, f"{source_id}.selectors.{section_name}.{field_name}")
-            for pos, extractor in enumerate(section.get("extractors", [])):
-                if extractor.get("type") == "css":
-                    selector = extractor.get("selector")
-                    if not isinstance(selector, str) or not selector:
-                        raise ValidationError(f"{source_id}: CSS extractor {pos} has no selector")
-                    assert_supported_selector(selector, f"{source_id}.selectors.{section_name}.extractors[{pos}]")
-                elif extractor.get("type") == "regex":
-                    try:
-                        re.compile(extractor.get("pattern", ""), re.I | re.S)
-                    except re.error as exc:
-                        raise ValidationError(f"{source_id}: invalid page regex: {exc}") from exc
-
+        if mode == "json-api":
+            api = config.get("api") or {}
+            for capability in ("search", "chapters", "pages"):
+                if config["supports"].get(capability) and capability not in api:
+                    raise ValidationError(f"{source_id}: api.{capability} is required")
+        configs[source_id] = config
         test_path = TEST_DIR / f"{config_path.stem}.test.json"
         test = load_json(test_path)
-        test_by_id[source_id] = test
         if test.get("sourceID") != source_id:
             raise ValidationError(f"{test_path.relative_to(ROOT)}: sourceID mismatch")
-        queries = test.get("queries")
-        if not isinstance(queries, list) or not queries or not all(isinstance(q, str) and q.strip() for q in queries):
-            raise ValidationError(f"{test_path.relative_to(ROOT)}: queries must be non-empty strings")
-        expected = test.get("expected", {})
-        for key in ("minSearchResults", "minChapters", "minPages"):
-            if not isinstance(expected.get(key), int) or expected[key] < 1:
-                raise ValidationError(f"{test_path.relative_to(ROOT)}: expected.{key} must be >= 1")
+        tests[source_id] = test
 
-    referenced_files = {Path(urlparse(entry["url"]).path).name for entry in entries}
-    local_files = {path.name for path in SOURCE_DIR.glob("*.json")}
-    unreferenced = sorted(local_files - referenced_files)
-    if unreferenced:
-        raise ValidationError(f"Unreferenced source configs: {', '.join(unreferenced)}")
-
-    print(f"STATIC OK: {len(entry_by_id)} source(s), {len(test_by_id)} live test definition(s)")
-    return index, config_by_id, test_by_id
+    print(f"STATIC OK: {len(configs)} source(s), {len(tests)} live test definition(s)")
+    return index, configs, tests
 
 
-def normalize_text(value: str) -> str:
-    value = html_module.unescape(value)
-    value = re.sub(r"<script[^>]*>.*?</script>", " ", value, flags=re.I | re.S)
-    value = re.sub(r"<style[^>]*>.*?</style>", " ", value, flags=re.I | re.S)
-    value = re.sub(r"<[^>]+>", " ", value)
-    return re.sub(r"\s+", " ", value).strip()
+def first_string(root: Any, paths: list[str]) -> str | None:
+    for path in paths:
+        value = json_path(root, path)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
 
 
-def cleanup_value(value: str, pipeline: list[str] | None, cleanup: dict[str, Any] | None) -> str:
-    cleanup = cleanup or {}
+def verify_image(session: Any, url: str, config: dict[str, Any], timeout: float) -> None:
+    host = urlparse(url).hostname or ""
+    if not domain_matches(host, config["allowedDomains"]):
+        raise ValidationError(f"Blocked image host: {host}")
+    headers = {"User-Agent": "YomuhonSourceValidator/2.0", "Range": "bytes=0-2047"}
+    response = session.get(url, headers=headers, timeout=timeout, stream=True)
+    response.raise_for_status()
+    content_type = response.headers.get("content-type", "").lower()
+    if not content_type.startswith("image/") and not IMAGE_EXT_RE.search(url):
+        raise ValidationError(f"Page URL is not an image: {url}")
+    next(response.iter_content(chunk_size=256), b"")
+    response.close()
+
+
+def run_json_api(entry: dict[str, Any], config: dict[str, Any], test: dict[str, Any], timeout: float) -> SourceReport:
+    report = SourceReport(source_id=entry["id"], status="failed")
+    started = time.monotonic()
+    session = request_session()
+    try:
+        query = (test.get("probe") or {}).get("query") or test["queries"][0]
+        search = config["api"]["search"]
+        root = request_json(session, config, search["request"], {"query": query}, {}, timeout)
+        results = json_path(root, search["itemsPath"]) or []
+        report.search_results = len(results)
+        if len(results) < test["expected"]["minSearchResults"]:
+            raise ValidationError("Search returned too few results")
+        manga = results[0]
+        manga_id = str(json_path(manga, search["idPath"]) or "")
+        if not manga_id or not first_string(manga, search["titlePaths"]):
+            raise ValidationError("Search mapping did not produce manga id/title")
+        chapters_op = config["api"]["chapters"]
+        languages = ["en", "es", "es-la"]
+        chapters = paginate_api(session, config, chapters_op, {"mangaID": manga_id, "languages": ",".join(languages)}, {"languages": languages}, timeout)
+        report.chapters = len(chapters)
+        if len(chapters) < test["expected"]["minChapters"]:
+            raise ValidationError("Chapter mapping returned too few chapters")
+        chapter_id = str(json_path(chapters[0], chapters_op["idPath"]) or "")
+        pages_op = config["api"]["pages"]
+        root = request_json(session, config, pages_op["request"], {"chapterID": chapter_id, "mangaID": manga_id}, {}, timeout)
+        base = str(json_path(root, pages_op["baseURLPath"]) or "")
+        hash_value = str(json_path(root, pages_op["hashPath"]) or "")
+        page_items = json_path(root, pages_op["itemsPath"]) or []
+        urls = [expand(pages_op["urlTemplate"], {"baseURL": base, "hash": hash_value, "item": str(item)}) for item in page_items]
+        report.pages = len(urls)
+        if len(urls) < test["expected"]["minPages"]:
+            raise ValidationError("Page mapping returned too few pages")
+        report.image_url = urls[0]
+        verify_image(session, urls[0], config, timeout)
+        report.status = "passed"
+    except Exception as exc:  # noqa: BLE001
+        report.error = f"{type(exc).__name__}: {exc}"
+    finally:
+        report.elapsed_seconds = round(time.monotonic() - started, 3)
+        session.close()
+    return report
+
+
+def fetch_html(session: Any, url: str, config: dict[str, Any], timeout: float) -> str:
+    host = urlparse(url).hostname or ""
+    if not domain_matches(host, config["allowedDomains"]):
+        raise ValidationError(f"Blocked document host: {host}")
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 YomuhonSourceValidator/2.0",
+        **((config.get("network") or {}).get("headers") or {}),
+    }
+    response = session.get(url, headers=headers, timeout=timeout)
+    response.raise_for_status()
+    return response.text
+
+
+def cleanup_text(value: str, config: dict[str, Any]) -> str:
+    cleanup = config.get("cleanup") or {}
     if cleanup.get("decodeHTMLEntities", True):
         value = html_module.unescape(value)
     for text in cleanup.get("removeText", []):
         value = value.replace(text, "")
-    for step in pipeline or []:
-        if step == "stripHTML":
-            value = re.sub(r"<[^>]+>", " ", value)
-        elif step == "decodeEntities":
-            value = html_module.unescape(value)
-        elif step == "normalizeWhitespace":
-            value = re.sub(r"\s+", " ", value).strip()
-        elif step == "trim":
-            value = value.strip()
     if cleanup.get("normalizeWhitespace", True):
         value = re.sub(r"\s+", " ", value).strip()
-    return value
+    return value.strip()
 
 
-def extract_field(scope: Any, field: dict[str, Any] | None, cleanup: dict[str, Any] | None) -> str | None:
+def extract_html_field(scope: Any, field: dict[str, Any] | None, config: dict[str, Any]) -> str | None:
     if not field:
         return None
-    if field.get("regex"):
-        match = re.search(field["regex"], str(scope), flags=re.I | re.S)
-        if match:
-            return cleanup_value(match.group(1), field.get("cleanup"), cleanup)
-
     selectors = field.get("selectors") or ([field["selector"]] if field.get("selector") else [])
     candidates = []
     if selectors:
         for selector in selectors:
-            try:
-                selected = scope.select_one(selector)
-            except Exception:
-                selected = None
+            selected = scope.select_one(selector)
             if selected is not None:
                 candidates.append(selected)
     else:
         candidates.append(scope)
-
     attrs = field.get("attrs") or ([field["attr"]] if field.get("attr") else ["text"])
     for candidate in candidates:
         for attr in attrs:
@@ -302,247 +331,116 @@ def extract_field(scope: Any, field: dict[str, Any] | None, cleanup: dict[str, A
             else:
                 value = candidate.get(attr)
             if isinstance(value, str) and value.strip():
-                return cleanup_value(value, field.get("cleanup"), cleanup)
+                if field.get("regex"):
+                    match = re.search(field["regex"], value, re.I | re.S)
+                    if not match:
+                        continue
+                    value = match.group(1)
+                return cleanup_text(value, config)
     return None
 
 
-def route_url(config: dict[str, Any], route: dict[str, Any], query: str | None, page: int = 1) -> str:
-    path = route["path"]
-    if query is not None:
-        path = path.replace("{{query}}", query)
-    path = path.replace("{page}", str(page))
+def html_route_url(config: dict[str, Any], route: dict[str, Any], query: str) -> str:
+    path = route["path"].replace("{{query}}", query)
     url = urljoin(config["baseURL"].rstrip("/") + "/", path.lstrip("/"))
-    query_items: list[tuple[str, str]] = []
-    for key, raw_value in (route.get("query") or {}).items():
-        value = raw_value.replace("{{query}}", query or "").replace("{page}", str(page))
-        query_items.append((key, value))
-    pagination = route.get("pagination") or {}
-    if pagination.get("type") == "query" and pagination.get("param") and not any(k == pagination["param"] for k, _ in query_items):
-        query_items.append((pagination["param"], str(page)))
+    items = [(key, str(value).replace("{{query}}", query)) for key, value in (route.get("query") or {}).items()]
     parsed = urlparse(url)
-    existing = parse_qsl(parsed.query, keep_blank_values=True)
-    return urlunparse(parsed._replace(query=urlencode(existing + query_items)))
+    return urlunparse(parsed._replace(query=urlencode(parse_qsl(parsed.query, keep_blank_values=True) + items)))
 
 
-def canonical_manga_url(url: str) -> str:
-    parsed = urlparse(url)
-    parts = [part for part in parsed.path.split("/") if part]
-    if parts and CHAPTER_PATH_RE.fullmatch(parts[-1]):
-        parts.pop()
-    return urlunparse(parsed._replace(path="/" + "/".join(parts), query="", fragment=""))
-
-
-def manga_title(raw_title: str, manga_url: str, original_url: str) -> str:
-    cleaned = normalize_text(raw_title)
-    lowered = cleaned.lower()
-    bad = not cleaned or lowered in {"[cover]", "cover", "image", "poster", "manga"} or CHAPTER_TITLE_RE.search(cleaned)
-    if bad or manga_url != original_url:
-        slug = (urlparse(manga_url).path.rstrip("/").split("/")[-1] or "untitled")
-        slug = re.sub(r"\.[0-9]+$", "", slug)
-        return re.sub(r"[-_]+", " ", slug).strip().title()
-    return cleaned
-
-
-def image_candidates(raw: str) -> list[str]:
-    output: list[str] = []
-    for item in raw.split(","):
-        first = item.strip().split(" ")[0]
-        if first:
-            output.append(first.replace("\\/", "/").replace("&amp;", "&"))
-    return output
-
-
-def is_allowed_image(url: str, filters: dict[str, Any] | None) -> bool:
-    value = url.lower()
-    filters = filters or {}
-    required = [item.lower() for item in filters.get("mustContain", [])]
-    if required and not any(item in value for item in required):
-        return False
-    return not any(item.lower() in value for item in filters.get("blockContains", []))
-
-
-def request_session() -> Any:
-    import requests
-    from requests.adapters import HTTPAdapter
-    from urllib3.util.retry import Retry
-
-    session = requests.Session()
-    retry = Retry(
-        total=2,
-        connect=2,
-        read=2,
-        status=2,
-        backoff_factor=0.75,
-        status_forcelist=(408, 425, 429, 500, 502, 503, 504),
-        allowed_methods=frozenset({"GET", "HEAD"}),
-        respect_retry_after_header=True,
-    )
-    session.mount("https://", HTTPAdapter(max_retries=retry))
-    return session
-
-
-def fetch_html(session: Any, url: str, config: dict[str, Any], timeout: float) -> str:
-    host = urlparse(url).hostname or ""
-    if not domain_matches(host, config["allowedDomains"]):
-        raise ValidationError(f"Blocked document host: {host}")
-    headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "User-Agent": "Mozilla/5.0 YomuhonSourceValidator/1.0",
-        **((config.get("network") or {}).get("headers") or {}),
-    }
-    response = session.get(url, headers=headers, timeout=timeout)
-    response.raise_for_status()
-    content_type = response.headers.get("content-type", "")
-    if "html" not in content_type.lower() and not response.text.lstrip().startswith("<"):
-        raise ValidationError(f"Expected HTML from {url}, got {content_type or 'unknown content type'}")
-    return response.text
-
-
-def parse_search(config: dict[str, Any], html_text: str) -> list[dict[str, str]]:
+def parse_html_search(config: dict[str, Any], html_text: str) -> list[dict[str, str]]:
     from bs4 import BeautifulSoup
-
     selector = config["selectors"]["search"]
     soup = BeautifulSoup(html_text, "html.parser")
-    output: list[dict[str, str]] = []
+    results: list[dict[str, str]] = []
     seen: set[str] = set()
     for item in soup.select(selector["container"]):
-        raw_url = extract_field(item, selector["url"], config.get("cleanup")) or item.get("href")
-        if not raw_url:
+        raw_url = extract_html_field(item, selector["url"], config) or item.get("href")
+        title = extract_html_field(item, selector["title"], config) or item.get_text(" ", strip=True)
+        if not raw_url or not title:
             continue
-        original_url = urljoin(config["baseURL"], raw_url)
-        canonical_url = canonical_manga_url(original_url)
-        if canonical_url in seen:
-            continue
-        raw_title = extract_field(item, selector["title"], config.get("cleanup")) or item.get_text(" ", strip=True)
-        title = manga_title(raw_title, canonical_url, original_url)
-        if not title:
-            continue
-        seen.add(canonical_url)
-        output.append({"title": title, "url": canonical_url})
-    return output
-
-
-def parse_chapters(config: dict[str, Any], html_text: str, manga_url: str) -> list[dict[str, Any]]:
-    from bs4 import BeautifulSoup
-
-    selector = config["selectors"]["chapters"]
-    soup = BeautifulSoup(html_text, "html.parser")
-    output: list[dict[str, Any]] = []
-    seen: set[str] = set()
-    for item in soup.select(selector["container"]):
-        raw_url = extract_field(item, selector["url"], config.get("cleanup")) or item.get("href")
-        if not raw_url:
-            continue
-        url = urljoin(manga_url, raw_url)
-        title = extract_field(item, selector.get("title"), config.get("cleanup")) or item.get_text(" ", strip=True)
-        last = urlparse(url).path.rstrip("/").split("/")[-1]
-        if not (CHAPTER_PATH_RE.fullmatch(last) or "/chapters/" in url or "/chapter/" in url or CHAPTER_TITLE_RE.search(title)):
-            continue
+        url = urljoin(config["baseURL"], raw_url)
         if url in seen:
             continue
         seen.add(url)
-        number = 0.0
-        rule = selector.get("number")
-        if rule:
-            source = url if rule.get("from") == "url" else title
-            match = re.search(rule.get("regex", ""), source, re.I)
-            if match:
-                try:
-                    number = float(match.group(1))
-                except ValueError:
-                    pass
-        output.append({"title": normalize_text(title), "url": url, "number": number})
-    return sorted(output, key=lambda item: (item["number"], item["url"]))
+        results.append({"id": url, "title": cleanup_text(title, config), "url": url})
+    return results
 
 
-def parse_pages(config: dict[str, Any], html_text: str, chapter_url: str) -> list[str]:
+def parse_html_chapters(config: dict[str, Any], html_text: str, manga_url: str) -> list[dict[str, Any]]:
     from bs4 import BeautifulSoup
-
-    selector = config["selectors"]["pages"]
+    selector = config["selectors"]["chapters"]
     soup = BeautifulSoup(html_text, "html.parser")
-    output: list[str] = []
+    chapters: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in soup.select(selector["container"]):
+        raw_url = extract_html_field(item, selector["url"], config) or item.get("href")
+        if not raw_url:
+            continue
+        url = urljoin(manga_url, raw_url)
+        if url in seen:
+            continue
+        seen.add(url)
+        title = extract_html_field(item, selector.get("title"), config) or item.get_text(" ", strip=True)
+        chapters.append({"id": url, "title": cleanup_text(title, config), "url": url})
+    return chapters
+
+
+def parse_html_pages(config: dict[str, Any], html_text: str, chapter_url: str) -> list[str]:
+    from bs4 import BeautifulSoup
+    selector = config["selectors"]["pages"]
+    filters = selector.get("filters") or {}
+    soup = BeautifulSoup(html_text, "html.parser")
+    urls: list[str] = []
     seen: set[str] = set()
     for extractor in selector["extractors"]:
+        candidates: list[str] = []
         if extractor["type"] == "css":
-            for element in soup.select(extractor["selector"]):
-                for attr in extractor.get("attrs", ["data-src", "data-original", "data-lazy-src", "srcset", "src"]):
+            for element in soup.select(extractor.get("selector", "")):
+                for attr in extractor.get("attrs", ["data-src", "data-original", "srcset", "src"]):
                     raw = element.get(attr)
-                    if not isinstance(raw, str):
-                        continue
-                    for candidate in image_candidates(raw):
-                        url = urljoin(chapter_url, candidate)
-                        if is_allowed_image(url, selector.get("filters")) and url not in seen:
-                            seen.add(url)
-                            output.append(url)
-        elif extractor["type"] == "regex":
-            for match in re.finditer(extractor["pattern"], html_text, re.I | re.S):
-                candidate = match.group(1).replace("\\/", "/").replace("&amp;", "&")
-                url = urljoin(chapter_url, candidate)
-                if is_allowed_image(url, selector.get("filters")) and url not in seen:
-                    seen.add(url)
-                    output.append(url)
-    return output
+                    if isinstance(raw, str):
+                        candidates.extend(part.strip().split(" ")[0] for part in raw.split(",") if part.strip())
+        else:
+            candidates.extend(match.group(1).replace("\\/", "/") for match in re.finditer(extractor.get("pattern", ""), html_text, re.I | re.S))
+        for raw in candidates:
+            url = urljoin(chapter_url, raw)
+            lowered = url.lower()
+            required = [item.lower() for item in filters.get("mustContain", [])]
+            blocked = [item.lower() for item in filters.get("blockContains", [])]
+            if required and not any(item in lowered for item in required):
+                continue
+            if any(item in lowered for item in blocked) or url in seen:
+                continue
+            seen.add(url)
+            urls.append(url)
+    return urls
 
 
-def verify_image(session: Any, url: str, config: dict[str, Any], timeout: float) -> None:
-    headers = {
-        "User-Agent": "Mozilla/5.0 YomuhonSourceValidator/1.0",
-        "Referer": config["baseURL"].rstrip("/") + "/",
-        "Range": "bytes=0-2047",
-        **((config.get("network") or {}).get("headers") or {}),
-    }
-    response = session.get(url, headers=headers, timeout=timeout, stream=True)
-    response.raise_for_status()
-    content_type = response.headers.get("content-type", "").lower()
-    if not content_type.startswith("image/") and not IMAGE_EXT_RE.search(url):
-        raise ValidationError(f"Page URL is not an image: {url} ({content_type or 'unknown type'})")
-    next(response.iter_content(chunk_size=256), b"")
-    response.close()
-
-
-def run_live_source(entry: dict[str, Any], config: dict[str, Any], test: dict[str, Any], timeout: float) -> SourceReport:
-    source_id = entry["id"]
-    report = SourceReport(source_id=source_id, status="failed")
+def run_html(entry: dict[str, Any], config: dict[str, Any], test: dict[str, Any], timeout: float) -> SourceReport:
+    report = SourceReport(source_id=entry["id"], status="failed")
     started = time.monotonic()
     session = request_session()
     try:
-        probe = test.get("probe") or {}
-        query = probe.get("query") or test["queries"][0]
-        search_url = route_url(config, config["routes"]["search"], query)
-        results = parse_search(config, fetch_html(session, search_url, config, timeout))
+        query = (test.get("probe") or {}).get("query") or test["queries"][0]
+        search_url = html_route_url(config, config["routes"]["search"], query)
+        results = parse_html_search(config, fetch_html(session, search_url, config, timeout))
         report.search_results = len(results)
-        minimum = test["expected"]["minSearchResults"]
-        if len(results) < minimum:
-            raise ValidationError(f"Search returned {len(results)} result(s), expected at least {minimum}")
-
-        expected_title = str(probe.get("expectedTitleContains", "")).lower()
-        candidate = next((item for item in results if expected_title and expected_title in item["title"].lower()), results[0])
-        report.manga_url = candidate["url"]
-        if probe.get("mangaPathContains") and probe["mangaPathContains"] not in urlparse(candidate["url"]).path:
-            raise ValidationError(f"Unexpected manga URL: {candidate['url']}")
-
-        details_html = fetch_html(session, candidate["url"], config, timeout)
-        chapters = parse_chapters(config, details_html, candidate["url"])
+        if len(results) < test["expected"]["minSearchResults"]:
+            raise ValidationError("Search returned too few results")
+        candidate = results[0]
+        chapters = parse_html_chapters(config, fetch_html(session, candidate["url"], config, timeout), candidate["url"])
         report.chapters = len(chapters)
-        minimum = test["expected"]["minChapters"]
-        if len(chapters) < minimum:
-            raise ValidationError(f"Details returned {len(chapters)} chapter(s), expected at least {minimum}")
-
-        chapter = chapters[0]
-        report.chapter_url = chapter["url"]
-        if probe.get("chapterPathContains") and probe["chapterPathContains"] not in urlparse(chapter["url"]).path:
-            raise ValidationError(f"Unexpected chapter URL: {chapter['url']}")
-
-        pages = parse_pages(config, fetch_html(session, chapter["url"], config, timeout), chapter["url"])
+        if len(chapters) < test["expected"]["minChapters"]:
+            raise ValidationError("Details returned too few chapters")
+        pages = parse_html_pages(config, fetch_html(session, chapters[0]["url"], config, timeout), chapters[0]["url"])
         report.pages = len(pages)
-        minimum = test["expected"]["minPages"]
-        if len(pages) < minimum:
-            raise ValidationError(f"Reader returned {len(pages)} page(s), expected at least {minimum}")
-
+        if len(pages) < test["expected"]["minPages"]:
+            raise ValidationError("Reader returned too few pages")
         report.image_url = pages[0]
         verify_image(session, pages[0], config, timeout)
         report.status = "passed"
-    except Exception as exc:  # noqa: BLE001 - report every source failure uniformly
+    except Exception as exc:  # noqa: BLE001
         report.error = f"{type(exc).__name__}: {exc}"
     finally:
         report.elapsed_seconds = round(time.monotonic() - started, 3)
@@ -550,45 +448,19 @@ def run_live_source(entry: dict[str, Any], config: dict[str, Any], test: dict[st
     return report
 
 
-def validate_live(
-    index: dict[str, Any],
-    configs: dict[str, dict[str, Any]],
-    tests: dict[str, dict[str, Any]],
-    source_ids: list[str],
-    timeout: float,
-    report_path: Path | None,
-) -> None:
-    selected = []
+def validate_live(index: dict[str, Any], configs: dict[str, dict[str, Any]], tests: dict[str, dict[str, Any]], source_ids: list[str], timeout: float, report_path: Path | None) -> None:
     requested = set(source_ids)
-    for entry in index["sources"]:
-        if requested and entry["id"] not in requested:
-            continue
-        if entry.get("status") in {"broken", "disabled", "deprecated"}:
-            continue
-        selected.append(entry)
-    if requested - {entry["id"] for entry in selected}:
-        missing = ", ".join(sorted(requested - {entry["id"] for entry in selected}))
-        raise ValidationError(f"Unknown or non-testable source id(s): {missing}")
-    if not selected:
-        raise ValidationError("No sources selected for live validation")
-
-    reports = [run_live_source(entry, configs[entry["id"]], tests[entry["id"]], timeout) for entry in selected]
-    for report in reports:
+    selected = [entry for entry in index["sources"] if (not requested or entry["id"] in requested) and entry.get("status") not in {"broken", "disabled", "deprecated"}]
+    reports = []
+    for entry in selected:
+        config = configs[entry["id"]]
+        report = run_json_api(entry, config, tests[entry["id"]], timeout) if config["engineMode"] == "json-api" else run_html(entry, config, tests[entry["id"]], timeout)
+        reports.append(report)
         marker = "LIVE OK" if report.status == "passed" else "LIVE FAIL"
-        print(
-            f"{marker}: {report.source_id} | search={report.search_results} "
-            f"chapters={report.chapters} pages={report.pages} time={report.elapsed_seconds}s"
-            + (f" | {report.error}" if report.error else "")
-        )
-
+        print(f"{marker}: {report.source_id} | search={report.search_results} chapters={report.chapters} pages={report.pages} time={report.elapsed_seconds}s" + (f" | {report.error}" if report.error else ""))
     if report_path:
         report_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
-            "generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
-            "reports": [asdict(report) for report in reports],
-        }
-        report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
+        report_path.write_text(json.dumps({"generatedAt": dt.datetime.now(dt.timezone.utc).isoformat(), "reports": [asdict(r) for r in reports]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     failures = [report for report in reports if report.status != "passed"]
     if failures:
         raise ValidationError(f"{len(failures)} live source validation(s) failed")
@@ -596,12 +468,11 @@ def validate_live(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--live", action="store_true", help="Run real network smoke tests after static validation")
-    parser.add_argument("--source", action="append", default=[], help="Limit live validation to a source id")
-    parser.add_argument("--timeout", type=float, default=20.0, help="Per-request timeout in seconds")
-    parser.add_argument("--report", type=Path, help="Write the live report as JSON")
+    parser.add_argument("--live", action="store_true")
+    parser.add_argument("--source", action="append", default=[])
+    parser.add_argument("--timeout", type=float, default=20.0)
+    parser.add_argument("--report", type=Path)
     args = parser.parse_args()
-
     try:
         index, configs, tests = validate_static()
         if args.live:
