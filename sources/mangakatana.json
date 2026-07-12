@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mangakatana_json",
   "name": "MangaKatana JSON",
-  "version": 4,
+  "version": 5,
   "language": "en",
   "baseURL": "https://mangakatana.com",
   "engineMode": "html",
@@ -18,7 +18,8 @@
     "popular": true,
     "details": true,
     "chapters": true,
-    "pages": true
+    "pages": true,
+    "genres": true
   },
   "network": {
     "headers": {
@@ -219,6 +220,147 @@
           "doubleclick",
           "analytics"
         ]
+      }
+    }
+  },
+  "discover": {
+    "popular": {
+      "route": {
+        "path": "/manga/page/{page}",
+        "pagination": {
+          "type": "path",
+          "start": 1,
+          "maxPages": 1
+        }
+      },
+      "selector": {
+        "container": "div#book_list div.item",
+        "title": {
+          "selectors": [
+            "div.text h3 a"
+          ],
+          "attrs": [
+            "text"
+          ],
+          "cleanup": [
+            "decodeEntities",
+            "normalizeWhitespace"
+          ]
+        },
+        "url": {
+          "selectors": [
+            "div.text h3 a"
+          ],
+          "attrs": [
+            "href"
+          ],
+          "required": true
+        },
+        "cover": {
+          "selectors": [
+            "img"
+          ],
+          "attrs": [
+            "data-src",
+            "data-original",
+            "data-lazy-src",
+            "src"
+          ]
+        }
+      }
+    },
+    "genres": {
+      "items": [
+        {
+          "id": "action",
+          "title": "Action",
+          "value": "action"
+        },
+        {
+          "id": "romance",
+          "title": "Romance",
+          "value": "romance"
+        },
+        {
+          "id": "comedy",
+          "title": "Comedy",
+          "value": "comedy"
+        },
+        {
+          "id": "drama",
+          "title": "Drama",
+          "value": "drama"
+        },
+        {
+          "id": "fantasy",
+          "title": "Fantasy",
+          "value": "fantasy"
+        },
+        {
+          "id": "horror",
+          "title": "Horror",
+          "value": "horror"
+        },
+        {
+          "id": "mystery",
+          "title": "Mystery",
+          "value": "mystery"
+        },
+        {
+          "id": "sci-fi",
+          "title": "Sci-Fi",
+          "value": "sci-fi"
+        },
+        {
+          "id": "slice-of-life",
+          "title": "Slice of Life",
+          "value": "slice-of-life"
+        }
+      ],
+      "operation": {
+        "route": {
+          "path": "/genre/{{genre}}/page/{page}",
+          "pagination": {
+            "type": "path",
+            "start": 1,
+            "maxPages": 1
+          }
+        },
+        "selector": {
+          "container": "div#book_list div.item",
+          "title": {
+            "selectors": [
+              "div.text h3 a"
+            ],
+            "attrs": [
+              "text"
+            ],
+            "cleanup": [
+              "decodeEntities",
+              "normalizeWhitespace"
+            ]
+          },
+          "url": {
+            "selectors": [
+              "div.text h3 a"
+            ],
+            "attrs": [
+              "href"
+            ],
+            "required": true
+          },
+          "cover": {
+            "selectors": [
+              "img"
+            ],
+            "attrs": [
+              "data-src",
+              "data-original",
+              "data-lazy-src",
+              "src"
+            ]
+          }
+        }
       }
     }
   },

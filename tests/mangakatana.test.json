@@ -13,5 +13,10 @@
     "minSearchResults": 1,
     "minChapters": 1,
     "minPages": 1
+  },
+  "discover": {
+    "genreID": "action",
+    "minPopularResults": 1,
+    "minGenreResults": 1
   }
 }
