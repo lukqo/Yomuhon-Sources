@@ -310,6 +310,18 @@
         },
         "cover": {
           "$ref": "#/$defs/fieldSelector"
+        },
+        "htmlScope": {
+          "$ref": "#/$defs/htmlScope"
+        },
+        "alternativeTitles": {
+          "$ref": "#/$defs/fieldSelector"
+        },
+        "author": {
+          "$ref": "#/$defs/fieldSelector"
+        },
+        "year": {
+          "$ref": "#/$defs/fieldSelector"
         }
       },
       "additionalProperties": false
@@ -324,6 +336,15 @@
           "$ref": "#/$defs/fieldSelector"
         },
         "cover": {
+          "$ref": "#/$defs/fieldSelector"
+        },
+        "alternativeTitles": {
+          "$ref": "#/$defs/fieldSelector"
+        },
+        "author": {
+          "$ref": "#/$defs/fieldSelector"
+        },
+        "year": {
           "$ref": "#/$defs/fieldSelector"
         }
       },
@@ -556,6 +577,24 @@
         },
         "coverTemplate": {
           "type": "string"
+        },
+        "alternativeTitlePaths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "authorPaths": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "yearPath": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false
@@ -718,6 +757,32 @@
           "$ref": "#/$defs/genreDiscovery"
         }
       },
+      "additionalProperties": false
+    },
+    "htmlScope": {
+      "type": "object",
+      "properties": {
+        "afterRegex": {
+          "type": "string",
+          "minLength": 1
+        },
+        "beforeRegex": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "afterRegex"
+          ]
+        },
+        {
+          "required": [
+            "beforeRegex"
+          ]
+        }
+      ],
       "additionalProperties": false
     }
   },
