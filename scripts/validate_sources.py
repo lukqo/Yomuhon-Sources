@@ -137,6 +137,22 @@ def validate_list_selector(selector: Any, context: str) -> None:
         for css in iter_field_selectors(field):
             assert_supported_selector(css, f"{context}.{field_name}")
 
+    html_scope = selector.get("htmlScope")
+    if html_scope is not None:
+        if not isinstance(html_scope, dict):
+            raise ValidationError(f"{context}.htmlScope must be an object")
+        patterns = [html_scope.get("afterRegex"), html_scope.get("beforeRegex")]
+        patterns = [pattern for pattern in patterns if pattern is not None]
+        if not patterns:
+            raise ValidationError(f"{context}.htmlScope requires afterRegex or beforeRegex")
+        for pattern in patterns:
+            if not isinstance(pattern, str) or not pattern:
+                raise ValidationError(f"{context}.htmlScope regex must be a non-empty string")
+            try:
+                re.compile(pattern, re.I | re.S)
+            except re.error as exc:
+                raise ValidationError(f"{context}.htmlScope has invalid regex: {exc}") from exc
+
 
 def validate_route(route: Any, context: str) -> None:
     if not isinstance(route, dict):
@@ -182,9 +198,11 @@ def validate_test_definition(test: dict[str, Any], source_id: str, test_path: Pa
     if discovery is not None:
         if not isinstance(discovery, dict):
             raise ValidationError(f"{test_path.relative_to(ROOT)}: discover must be an object")
-        for key in ("minPopularResults", "minGenreResults"):
+        for key in ("minPopularResults", "minPopularCoveredResults", "minGenreResults"):
             if key in discovery and (not isinstance(discovery[key], int) or discovery[key] < 1):
                 raise ValidationError(f"{test_path.relative_to(ROOT)}: discover.{key} must be >= 1")
+        if "minPopularCoveredResults" in discovery and "minPopularResults" not in discovery:
+            raise ValidationError(f"{test_path.relative_to(ROOT)}: discover.minPopularResults is required when checking covers")
         genre_id = discovery.get("genreID")
         if "minGenreResults" in discovery and (not isinstance(genre_id, str) or not genre_id.strip()):
             raise ValidationError(f"{test_path.relative_to(ROOT)}: discover.genreID is required")
@@ -212,11 +230,13 @@ def validate_html_contract(config: dict[str, Any], source_id: str) -> None:
     for section_name, section in selectors.items():
         if not isinstance(section, dict):
             continue
+        if section_name in {"search", "popular"}:
+            validate_list_selector(section, f"{source_id}.selectors.{section_name}")
         container = section.get("container")
         if isinstance(container, str):
             assert_supported_selector(container, f"{source_id}.selectors.{section_name}.container")
         for field_name, field in section.items():
-            if field_name in {"container", "sort", "filters", "extractors", "number"}:
+            if field_name in {"container", "sort", "filters", "extractors", "number", "htmlScope"}:
                 continue
             for selector in iter_field_selectors(field):
                 assert_supported_selector(selector, f"{source_id}.selectors.{section_name}.{field_name}")
@@ -628,22 +648,67 @@ def html_route_url(config: dict[str, Any], route: dict[str, Any], variables: dic
     return urlunparse(parsed._replace(query=urlencode(parse_qsl(parsed.query, keep_blank_values=True) + items)))
 
 
+def apply_html_scope(html_text: str, selector: dict[str, Any]) -> str:
+    scope = selector.get("htmlScope") or {}
+    after_pattern = scope.get("afterRegex")
+    if after_pattern:
+        match = re.search(after_pattern, html_text, re.I | re.S)
+        if match is None:
+            return ""
+        html_text = html_text[match.end():]
+    before_pattern = scope.get("beforeRegex")
+    if before_pattern:
+        match = re.search(before_pattern, html_text, re.I | re.S)
+        if match is not None:
+            html_text = html_text[:match.start()]
+    return html_text
+
+
+def canonical_html_manga_url(url: str) -> str:
+    parsed = urlparse(url)
+    parts = [part for part in parsed.path.split("/") if part]
+    if parts and re.fullmatch(r"c[0-9]+(?:\.[0-9]+)?", parts[-1], re.I):
+        parts.pop()
+    path = "/" + "/".join(parts)
+    return urlunparse(parsed._replace(path=path, query="", fragment=""))
+
+
 def parse_html_list(config: dict[str, Any], html_text: str, selector: dict[str, Any]) -> list[dict[str, str]]:
     from bs4 import BeautifulSoup
-    soup = BeautifulSoup(html_text, "html.parser")
-    results: list[dict[str, str]] = []
-    seen: set[str] = set()
+    soup = BeautifulSoup(apply_html_scope(html_text, selector), "html.parser")
+    results_by_url: dict[str, dict[str, str]] = {}
+    order: list[str] = []
+
     for item in soup.select(selector["container"]):
         raw_url = extract_html_field(item, selector["url"], config) or item.get("href")
+        if not raw_url:
+            continue
+        original_url = urljoin(config["baseURL"], raw_url)
+        url = canonical_html_manga_url(original_url)
         title = extract_html_field(item, selector["title"], config) or item.get_text(" ", strip=True)
-        if not raw_url or not title:
+        if original_url != url and (not title or re.match(r"^chapter\b", title.strip(), re.I)):
+            title = None
+        cover = extract_html_field(item, selector.get("cover"), config)
+        cover_url = urljoin(config["baseURL"], cover) if cover else None
+
+        existing = results_by_url.get(url)
+        if existing is None:
+            fallback_title = urlparse(url).path.rstrip("/").split("/")[-1].rsplit(".", 1)[0].replace("-", " ").replace("_", " ").title()
+            results_by_url[url] = {
+                "id": url,
+                "title": cleanup_text(title or fallback_title, config),
+                "url": url,
+                **({"cover": cover_url} if cover_url else {}),
+            }
+            order.append(url)
             continue
-        url = urljoin(config["baseURL"], raw_url)
-        if url in seen:
-            continue
-        seen.add(url)
-        results.append({"id": url, "title": cleanup_text(title, config), "url": url})
-    return results
+
+        if title and len(cleanup_text(title, config)) > len(existing.get("title", "")):
+            existing["title"] = cleanup_text(title, config)
+        if cover_url and not existing.get("cover"):
+            existing["cover"] = cover_url
+
+    return [results_by_url[url] for url in order]
 
 
 def parse_html_chapters(config: dict[str, Any], html_text: str, manga_url: str) -> list[dict[str, Any]]:
@@ -735,6 +800,9 @@ def validate_live_discovery_html(report: SourceReport, session: Any, config: dic
         report.popular_results = len(results)
         if len(results) < discovery_test["minPopularResults"]:
             raise ValidationError("Popular discovery returned too few results")
+        minimum_covered = discovery_test.get("minPopularCoveredResults", 0)
+        if sum(1 for item in results if item.get("cover")) < minimum_covered:
+            raise ValidationError("Popular discovery returned too few covered results")
     if "minGenreResults" in discovery_test:
         genres = config["discover"]["genres"]
         genre_id = discovery_test["genreID"]

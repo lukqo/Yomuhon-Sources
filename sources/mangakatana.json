@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mangakatana_json",
   "name": "MangaKatana JSON",
-  "version": 5,
+  "version": 6,
   "language": "en",
   "baseURL": "https://mangakatana.com",
   "engineMode": "html",
@@ -29,12 +29,7 @@
   },
   "routes": {
     "popular": {
-      "path": "/manga/page/{page}",
-      "pagination": {
-        "type": "path",
-        "start": 1,
-        "maxPages": 1
-      }
+      "path": "/"
     },
     "search": {
       "path": "/",
@@ -46,11 +41,8 @@
   },
   "selectors": {
     "popular": {
-      "container": "div#book_list div.item",
+      "container": "a[href*=\"/manga/\"]",
       "title": {
-        "selectors": [
-          "div.text h3 a"
-        ],
         "attrs": [
           "text"
         ],
@@ -60,9 +52,6 @@
         ]
       },
       "url": {
-        "selectors": [
-          "div.text h3 a"
-        ],
         "attrs": [
           "href"
         ],
@@ -73,11 +62,15 @@
           "img"
         ],
         "attrs": [
+          "src",
           "data-src",
           "data-original",
-          "data-lazy-src",
-          "src"
+          "data-lazy-src"
         ]
+      },
+      "htmlScope": {
+        "afterRegex": ">\\s*Hot Manga\\s*<",
+        "beforeRegex": "<footer\\b"
       }
     },
     "search": {
@@ -226,19 +219,11 @@
   "discover": {
     "popular": {
       "route": {
-        "path": "/manga/page/{page}",
-        "pagination": {
-          "type": "path",
-          "start": 1,
-          "maxPages": 1
-        }
+        "path": "/"
       },
       "selector": {
-        "container": "div#book_list div.item",
+        "container": "a[href*=\"/manga/\"]",
         "title": {
-          "selectors": [
-            "div.text h3 a"
-          ],
           "attrs": [
             "text"
           ],
@@ -248,9 +233,6 @@
           ]
         },
         "url": {
-          "selectors": [
-            "div.text h3 a"
-          ],
           "attrs": [
             "href"
           ],
@@ -261,11 +243,15 @@
             "img"
           ],
           "attrs": [
+            "src",
             "data-src",
             "data-original",
-            "data-lazy-src",
-            "src"
+            "data-lazy-src"
           ]
+        },
+        "htmlScope": {
+          "afterRegex": ">\\s*Hot Manga\\s*<",
+          "beforeRegex": "<footer\\b"
         }
       }
     },

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-11",
+  "updatedAt": "2026-07-12",
   "minimumAppVersion": "1.0.0",
   "sources": [
     {
@@ -22,7 +22,7 @@
     {
       "id": "mangakatana_json",
       "name": "MangaKatana JSON",
-      "version": 5,
+      "version": 6,
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangakatana.json",
@@ -34,7 +34,7 @@
         "i.mkklcdnv6tempv2.com",
         "i.mkklcdnv6.com"
       ],
-      "notes": "Declarative HTML source. v5 preserves the v4 content/chapter selectors and adds declarative popular + real genre discovery capabilities."
+      "notes": "Declarative HTML source. v6 reads MangaKatana's real Hot Manga shelf, keeps v4 chapter selectors, and exposes real genre discovery."
     },
     {
       "id": "mangapill_json",

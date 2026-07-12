@@ -17,6 +17,7 @@
   "discover": {
     "genreID": "action",
     "minPopularResults": 1,
-    "minGenreResults": 1
+    "minGenreResults": 1,
+    "minPopularCoveredResults": 1
   }
 }
