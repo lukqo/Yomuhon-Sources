@@ -1,0 +1,190 @@
+{
+  "schemaVersion": 1,
+  "id": "mangapill_json",
+  "name": "MangaPill JSON",
+  "version": 3,
+  "language": "en",
+  "baseURL": "https://mangapill.com",
+  "engineMode": "html",
+  "enabledByDefault": false,
+  "experimental": true,
+  "allowedDomains": [
+    "mangapill.com",
+    "cdn.mangapill.com",
+    "cdn.readdetectiveconan.com"
+  ],
+  "supports": {
+    "search": true,
+    "popular": false,
+    "details": true,
+    "chapters": true,
+    "pages": true
+  },
+  "network": {
+    "headers": {
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
+      "Referer": "https://mangapill.com/"
+    }
+  },
+  "routes": {
+    "search": {
+      "path": "/search",
+      "query": {
+        "q": "{{query}}"
+      }
+    }
+  },
+  "selectors": {
+    "search": {
+      "container": "a[href*='/manga/']",
+      "title": {
+        "attrs": [
+          "title",
+          "text"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "url": {
+        "attrs": [
+          "href"
+        ],
+        "required": true
+      },
+      "cover": {
+        "selectors": [
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "data-original",
+          "data-lazy-src",
+          "src"
+        ]
+      }
+    },
+    "details": {
+      "title": {
+        "selectors": [
+          "h1",
+          "meta[property='og:title']"
+        ],
+        "attrs": [
+          "text",
+          "content"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "synopsis": {
+        "selectors": [
+          "meta[name='description']",
+          "meta[property='og:description']"
+        ],
+        "attrs": [
+          "content"
+        ],
+        "cleanup": [
+          "stripHTML",
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "cover": {
+        "selectors": [
+          "meta[property='og:image']",
+          "img"
+        ],
+        "attrs": [
+          "content",
+          "data-src",
+          "data-original",
+          "data-lazy-src",
+          "src"
+        ]
+      }
+    },
+    "chapters": {
+      "container": "a[href*='/chapters/']",
+      "title": {
+        "attrs": [
+          "text",
+          "title"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "url": {
+        "attrs": [
+          "href"
+        ],
+        "required": true
+      },
+      "number": {
+        "from": "url",
+        "regex": "chapter-([0-9]+(?:\\.[0-9]+)?)"
+      },
+      "sort": "numberAscending"
+    },
+    "pages": {
+      "extractors": [
+        {
+          "type": "css",
+          "selector": "img[alt*='Page'], img[src*='cdn.mangapill.com'], img[src*='cdn.readdetectiveconan.com'], img[data-src*='cdn.readdetectiveconan.com']",
+          "attrs": [
+            "data-src",
+            "data-original",
+            "data-lazy-src",
+            "srcset",
+            "src"
+          ]
+        },
+        {
+          "type": "regex",
+          "pattern": "(https?:\\\\?/\\\\?/[^\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\"']*)?)"
+        }
+      ],
+      "filters": {
+        "mustContain": [
+          ".jpg",
+          ".jpeg",
+          ".png",
+          ".webp"
+        ],
+        "blockContains": [
+          "logo",
+          "avatar",
+          "placeholder",
+          "banner",
+          "ads/",
+          "icon",
+          "favicon",
+          "sprite",
+          "doubleclick",
+          "analytics"
+        ]
+      }
+    }
+  },
+  "cleanup": {
+    "decodeHTMLEntities": true,
+    "normalizeWhitespace": true,
+    "removeText": [
+      "Read Manga Online",
+      "Advertisement"
+    ]
+  },
+  "tests": {
+    "query": "hime no dameshi",
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}

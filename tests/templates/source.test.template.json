@@ -1,0 +1,6 @@
+{
+  "sourceID": "example",
+  "queries": ["example"],
+  "probe": {"query": "example"},
+  "expected": {"minSearchResults": 1, "minChapters": 1, "minPages": 1}
+}

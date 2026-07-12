@@ -1,0 +1,16 @@
+{
+  "sourceID": "mangadex",
+  "queries": [
+    "berserk",
+    "one piece"
+  ],
+  "probe": {
+    "query": "berserk",
+    "expectedTitleContains": "Berserk"
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}
