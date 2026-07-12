@@ -1,0 +1,8 @@
+Yomuhon-Sources authoring-ready validation
+==========================================
+Static validator: PASS (3 sources, 3 live test definitions)
+Python compile: PASS (new_source.py, validate_sources.py)
+JSON decode: PASS (all JSON files)
+HTML scaffold smoke test: PASS
+JSON API scaffold smoke test: PASS
+Packaged files: 22

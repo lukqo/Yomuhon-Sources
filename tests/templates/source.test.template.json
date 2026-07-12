@@ -1,0 +1,15 @@
+{
+  "sourceID": "example",
+  "queries": ["replace-me"],
+  "probe": {
+    "query": "replace-me",
+    "expectedTitleContains": "Replace Me",
+    "mangaPathContains": null,
+    "chapterPathContains": null
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "id": "example_api",
+  "name": "Example API",
+  "version": 1,
+  "language": "multi",
+  "baseURL": "https://api.example.com",
+  "engineMode": "json-api",
+  "enabledByDefault": false,
+  "experimental": true,
+  "allowedDomains": ["api.example.com", "images.example.com"],
+  "supports": {
+    "search": true,
+    "popular": false,
+    "details": true,
+    "chapters": true,
+    "pages": true
+  },
+  "network": {
+    "headers": {
+      "Accept": "application/json",
+      "User-Agent": "Yomuhon/1.0"
+    }
+  },
+  "routes": {},
+  "selectors": {},
+  "api": {
+    "search": {
+      "request": {
+        "method": "GET",
+        "path": "/manga",
+        "query": {"title": "{{query}}", "limit": 20}
+      },
+      "itemsPath": "data",
+      "idPath": "id",
+      "titlePaths": ["attributes.title.en"],
+      "synopsisPaths": ["attributes.description.en"]
+    },
+    "chapters": {
+      "request": {
+        "method": "GET",
+        "path": "/manga/{mangaID}/chapters",
+        "query": {}
+      },
+      "pagination": {
+        "offsetParam": "offset",
+        "limitParam": "limit",
+        "limit": 100,
+        "maxItems": 10000,
+        "totalPath": "total"
+      },
+      "itemsPath": "data",
+      "idPath": "id",
+      "numberPath": "chapter",
+      "titlePath": "title",
+      "languagePath": "language",
+      "sort": "numberAscending"
+    },
+    "pages": {
+      "request": {
+        "method": "GET",
+        "path": "/chapter/{chapterID}/pages",
+        "query": {}
+      },
+      "baseURLPath": "baseUrl",
+      "hashPath": "chapter.hash",
+      "itemsPath": "chapter.data",
+      "urlTemplate": "{baseURL}/data/{hash}/{item}"
+    }
+  },
+  "cleanup": {
+    "decodeHTMLEntities": true,
+    "normalizeWhitespace": true,
+    "removeText": []
+  },
+  "tests": {
+    "query": "replace-me",
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}

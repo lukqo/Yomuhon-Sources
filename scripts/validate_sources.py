@@ -55,6 +55,138 @@ def domain_matches(host: str, allowed: Iterable[str]) -> bool:
     return any(host == item.lower().strip(".") or host.endswith("." + item.lower().strip(".")) for item in allowed)
 
 
+ALLOWED_ENGINE_MODES = {"html", "json-api"}
+SUPPORTED_METHODS = {"GET"}
+
+
+def assert_https_url(value: Any, context: str) -> None:
+    parsed = urlparse(value if isinstance(value, str) else "")
+    if parsed.scheme != "https" or not parsed.hostname:
+        raise ValidationError(f"{context}: expected an absolute HTTPS URL")
+
+
+def assert_domains(domains: Any, context: str) -> list[str]:
+    if not isinstance(domains, list) or not domains:
+        raise ValidationError(f"{context}: allowedDomains cannot be empty")
+    output: list[str] = []
+    for domain in domains:
+        if not isinstance(domain, str) or not domain or "/" in domain or ":" in domain or " " in domain:
+            raise ValidationError(f"{context}: invalid allowed domain {domain!r}")
+        normalized = domain.lower().strip(".")
+        if normalized in output:
+            raise ValidationError(f"{context}: duplicate allowed domain {domain!r}")
+        output.append(normalized)
+    return output
+
+
+def assert_supported_selector(selector: str, context: str) -> None:
+    # Colons inside attribute values (for example og:title) are valid.
+    without_attributes = re.sub(r"\[[^\]]*\]", "", selector)
+    if ":" in without_attributes or "+" in without_attributes or "~" in without_attributes:
+        raise ValidationError(f"{context}: selector uses syntax unsupported by Yomuhon: {selector!r}")
+
+
+def iter_field_selectors(value: Any) -> Iterable[str]:
+    if not isinstance(value, dict):
+        return
+    selectors = value.get("selectors")
+    if isinstance(selectors, list):
+        for selector in selectors:
+            if isinstance(selector, str):
+                yield selector
+    selector = value.get("selector")
+    if isinstance(selector, str):
+        yield selector
+
+
+def validate_test_definition(test: dict[str, Any], source_id: str, test_path: Path) -> None:
+    if test.get("sourceID") != source_id:
+        raise ValidationError(f"{test_path.relative_to(ROOT)}: sourceID mismatch")
+    queries = test.get("queries")
+    if not isinstance(queries, list) or not queries or not all(isinstance(q, str) and q.strip() for q in queries):
+        raise ValidationError(f"{test_path.relative_to(ROOT)}: queries must be non-empty strings")
+    expected = test.get("expected")
+    if not isinstance(expected, dict):
+        raise ValidationError(f"{test_path.relative_to(ROOT)}: expected is required")
+    for key in ("minSearchResults", "minChapters", "minPages"):
+        if not isinstance(expected.get(key), int) or expected[key] < 1:
+            raise ValidationError(f"{test_path.relative_to(ROOT)}: expected.{key} must be >= 1")
+
+
+def validate_html_contract(config: dict[str, Any], source_id: str) -> None:
+    supports = config["supports"]
+    routes = config["routes"]
+    selectors = config["selectors"]
+    for capability in ("search", "popular"):
+        if supports.get(capability) and (capability not in routes or capability not in selectors):
+            raise ValidationError(f"{source_id}: {capability} support requires routes.{capability} and selectors.{capability}")
+    for capability in ("details", "chapters", "pages"):
+        if supports.get(capability) and capability not in selectors:
+            raise ValidationError(f"{source_id}: {capability} support requires selectors.{capability}")
+    if supports.get("pages") and not supports.get("chapters"):
+        raise ValidationError(f"{source_id}: pages support requires chapters support")
+    for route_name, route in routes.items():
+        if not isinstance(route, dict):
+            continue
+        path = route.get("path")
+        if not isinstance(path, str) or not path.startswith("/"):
+            raise ValidationError(f"{source_id}: routes.{route_name}.path must start with /")
+    for section_name, section in selectors.items():
+        if not isinstance(section, dict):
+            continue
+        container = section.get("container")
+        if isinstance(container, str):
+            assert_supported_selector(container, f"{source_id}.selectors.{section_name}.container")
+        for field_name, field in section.items():
+            if field_name in {"container", "sort", "filters", "extractors", "number"}:
+                continue
+            for selector in iter_field_selectors(field):
+                assert_supported_selector(selector, f"{source_id}.selectors.{section_name}.{field_name}")
+        extractors = section.get("extractors", [])
+        if isinstance(extractors, list):
+            for position, extractor in enumerate(extractors):
+                if not isinstance(extractor, dict):
+                    continue
+                if extractor.get("type") == "css":
+                    selector = extractor.get("selector")
+                    if not isinstance(selector, str) or not selector:
+                        raise ValidationError(f"{source_id}: CSS extractor {position} has no selector")
+                    assert_supported_selector(selector, f"{source_id}.selectors.{section_name}.extractors[{position}]")
+                elif extractor.get("type") == "regex":
+                    pattern = extractor.get("pattern")
+                    try:
+                        re.compile(pattern or "", re.I | re.S)
+                    except re.error as exc:
+                        raise ValidationError(f"{source_id}: invalid page regex: {exc}") from exc
+
+
+def validate_api_contract(config: dict[str, Any], source_id: str) -> None:
+    supports = config["supports"]
+    api = config.get("api") or {}
+    for capability in ("search", "chapters", "pages"):
+        if supports.get(capability) and capability not in api:
+            raise ValidationError(f"{source_id}: api.{capability} is required")
+    for operation_name, operation in api.items():
+        if not isinstance(operation, dict):
+            raise ValidationError(f"{source_id}: api.{operation_name} must be an object")
+        request = operation.get("request")
+        if not isinstance(request, dict):
+            raise ValidationError(f"{source_id}: api.{operation_name}.request is required")
+        if request.get("method") not in SUPPORTED_METHODS:
+            raise ValidationError(f"{source_id}: api.{operation_name}.request.method must be GET")
+        path = request.get("path")
+        if not isinstance(path, str) or not path.startswith("/"):
+            raise ValidationError(f"{source_id}: api.{operation_name}.request.path must start with /")
+    pagination = (api.get("chapters") or {}).get("pagination")
+    if isinstance(pagination, dict):
+        if pagination.get("offsetParam") == pagination.get("limitParam"):
+            raise ValidationError(f"{source_id}: pagination offsetParam and limitParam must differ")
+        limit = pagination.get("limit")
+        max_items = pagination.get("maxItems", 10_000)
+        if isinstance(limit, int) and isinstance(max_items, int) and max_items < limit:
+            raise ValidationError(f"{source_id}: pagination maxItems cannot be lower than limit")
+
+
 def json_path(root: Any, path: str) -> Any:
     current = root
     clean = path.removeprefix("$.").strip("$")
@@ -169,55 +301,96 @@ def validate_static() -> tuple[dict[str, Any], dict[str, dict[str, Any]], dict[s
     index = load_json(INDEX_PATH)
     schema = load_json(SCHEMA_PATH)
     index_schema = load_json(INDEX_SCHEMA_PATH)
-    errors = sorted(Draft202012Validator(index_schema).iter_errors(index), key=lambda item: list(item.path))
-    if errors:
-        raise ValidationError(f"index.json failed schema validation: {errors[0].message}")
+    index_errors = sorted(Draft202012Validator(index_schema).iter_errors(index), key=lambda item: list(item.path))
+    if index_errors:
+        rendered = "; ".join(f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in index_errors[:8])
+        raise ValidationError(f"index.json failed schema validation: {rendered}")
+    if index.get("schemaVersion") != 1:
+        raise ValidationError("index.json: schemaVersion must be 1")
     try:
         dt.date.fromisoformat(index.get("updatedAt", ""))
     except ValueError as exc:
         raise ValidationError("index.json: updatedAt must use YYYY-MM-DD") from exc
 
+    entries = index.get("sources")
+    if not isinstance(entries, list) or not entries:
+        raise ValidationError("index.json: sources must be a non-empty array")
+
     validator = Draft202012Validator(schema)
     configs: dict[str, dict[str, Any]] = {}
     tests: dict[str, dict[str, Any]] = {}
     seen: set[str] = set()
-    for entry in index.get("sources", []):
+    referenced_source_files: set[str] = set()
+    referenced_test_files: set[str] = set()
+
+    for entry in entries:
+        if not isinstance(entry, dict):
+            raise ValidationError("index.json: every source entry must be an object")
         source_id = entry.get("id")
         if not isinstance(source_id, str) or not SOURCE_ID_RE.fullmatch(source_id) or source_id in seen:
             raise ValidationError(f"Invalid or duplicate source id: {source_id!r}")
         seen.add(source_id)
         if entry.get("status") not in ALLOWED_STATUSES:
             raise ValidationError(f"{source_id}: invalid status")
-        config_path = SOURCE_DIR / Path(urlparse(entry["url"]).path).name
+        if not isinstance(entry.get("enabled"), bool) or not isinstance(entry.get("experimental"), bool):
+            raise ValidationError(f"{source_id}: enabled and experimental must be booleans")
+
+        remote_url = entry.get("url")
+        assert_https_url(remote_url, f"{source_id}.url")
+        index_domains = assert_domains(entry.get("allowedDomains"), f"{source_id}.index")
+        config_path = SOURCE_DIR / Path(urlparse(remote_url).path).name
+        referenced_source_files.add(config_path.name)
         config = load_json(config_path)
         schema_errors = sorted(validator.iter_errors(config), key=lambda item: list(item.path))
         if schema_errors:
             rendered = "; ".join(f"{'.'.join(map(str, e.path)) or '<root>'}: {e.message}" for e in schema_errors[:8])
             raise ValidationError(f"{config_path.relative_to(ROOT)} failed schema validation: {rendered}")
+
         for key in ("id", "name", "version", "language"):
             if config.get(key) != entry.get(key):
                 raise ValidationError(f"{source_id}: {key} differs between index and config")
-        mode = config["engineMode"]
+
+        mode = config.get("engineMode")
+        if mode not in ALLOWED_ENGINE_MODES:
+            raise ValidationError(f"{source_id}: unsupported engineMode {mode!r}")
         expected_kind = "declarative-json-api" if mode == "json-api" else "declarative-html"
         if entry.get("kind") != expected_kind:
             raise ValidationError(f"{source_id}: kind must be {expected_kind}")
         if config.get("enabledByDefault") is not False:
             raise ValidationError(f"{source_id}: remote sources must remain disabled by default")
-        if mode == "json-api":
-            api = config.get("api") or {}
-            for capability in ("search", "chapters", "pages"):
-                if config["supports"].get(capability) and capability not in api:
-                    raise ValidationError(f"{source_id}: api.{capability} is required")
+
+        assert_https_url(config.get("baseURL"), f"{source_id}.baseURL")
+        config_domains = assert_domains(config.get("allowedDomains"), f"{source_id}.config")
+        base_host = urlparse(config["baseURL"]).hostname or ""
+        if not domain_matches(base_host, index_domains):
+            raise ValidationError(f"{source_id}: baseURL host {base_host!r} is not allowed by index.json")
+        for domain in config_domains:
+            if not domain_matches(domain, index_domains):
+                raise ValidationError(f"{source_id}: config domain {domain!r} is not allowed by index.json")
+
+        if mode == "html":
+            validate_html_contract(config, source_id)
+        else:
+            validate_api_contract(config, source_id)
+
         configs[source_id] = config
         test_path = TEST_DIR / f"{config_path.stem}.test.json"
+        referenced_test_files.add(test_path.name)
         test = load_json(test_path)
-        if test.get("sourceID") != source_id:
-            raise ValidationError(f"{test_path.relative_to(ROOT)}: sourceID mismatch")
+        validate_test_definition(test, source_id, test_path)
         tests[source_id] = test
+
+    local_source_files = {path.name for path in SOURCE_DIR.glob("*.json")}
+    unreferenced_sources = sorted(local_source_files - referenced_source_files)
+    if unreferenced_sources:
+        raise ValidationError(f"Unreferenced source configs: {', '.join(unreferenced_sources)}")
+    local_test_files = {path.name for path in TEST_DIR.glob("*.test.json")}
+    unreferenced_tests = sorted(local_test_files - referenced_test_files)
+    if unreferenced_tests:
+        raise ValidationError(f"Unreferenced test configs: {', '.join(unreferenced_tests)}")
 
     print(f"STATIC OK: {len(configs)} source(s), {len(tests)} live test definition(s)")
     return index, configs, tests
-
 
 def first_string(root: Any, paths: list[str]) -> str | None:
     for path in paths:
@@ -451,6 +624,12 @@ def run_html(entry: dict[str, Any], config: dict[str, Any], test: dict[str, Any]
 def validate_live(index: dict[str, Any], configs: dict[str, dict[str, Any]], tests: dict[str, dict[str, Any]], source_ids: list[str], timeout: float, report_path: Path | None) -> None:
     requested = set(source_ids)
     selected = [entry for entry in index["sources"] if (not requested or entry["id"] in requested) and entry.get("status") not in {"broken", "disabled", "deprecated"}]
+    selected_ids = {entry["id"] for entry in selected}
+    missing = requested - selected_ids
+    if missing:
+        raise ValidationError(f"Unknown or non-testable source id(s): {', '.join(sorted(missing))}")
+    if not selected:
+        raise ValidationError("No sources selected for live validation")
     reports = []
     for entry in selected:
         config = configs[entry["id"]]
