@@ -22,7 +22,7 @@
     {
       "id": "mangakatana_json",
       "name": "MangaKatana JSON",
-      "version": 6,
+      "version": 7,
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangakatana.json",
@@ -34,7 +34,7 @@
         "i.mkklcdnv6tempv2.com",
         "i.mkklcdnv6.com"
       ],
-      "notes": "Declarative HTML source. v6 reads MangaKatana's real Hot Manga shelf, keeps v4 chapter selectors, and exposes real genre discovery."
+      "notes": "Declarative HTML source. v7 keeps Discover/genres and fixes reader extraction for plain and JavaScript-escaped page image URLs."
     },
     {
       "id": "mangapill_json",
