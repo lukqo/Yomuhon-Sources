@@ -57,7 +57,7 @@ python3 scripts/validate_sources.py --live --source mangapill_json
 python3 scripts/validate_sources.py --live --report artifacts/live-source-report.json
 ```
 
-La validación estática comprueba schema, versión, kind/runtime, rutas, selectores soportados, dominios, capacidades Discover y presencia de test por fuente.
+La validación estática comprueba schema, versión, kind/runtime, rutas, selectores soportados, `allowedDomains` esperados, capacidades Discover y presencia de test por fuente.
 
 La validación live comprueba:
 
@@ -70,6 +70,8 @@ Search
 ```
 
 Cuando el test declara Discover, también prueba Popular y/o género real.
+
+Las URLs descubiertas en tiempo de ejecución no se bloquean solo por usar un host público que no figure en `allowedDomains`. El live validator emite `LIVE WARN` para ese host y continúa. Sí bloquea destinos no públicos: `localhost`, hosts locales, IP literales privadas, link-local, loopback, multicast/reservadas y cualquier URL que no sea HTTPS.
 
 GitHub Actions ejecuta static en push y pull request. En `main`, ejecución manual y los horarios de las 00:17 y 12:17 UTC también ejecutan live validation y conservan `live-source-report.json` como artifact durante 14 días.
 
@@ -105,12 +107,14 @@ Al cambiar selectores, rutas, dominios o mappings:
 1. modifica `sources/<id>.json`;
 2. aumenta `version` en la config;
 3. aumenta la misma versión en `index.json`;
-4. actualiza `allowedDomains` en ambos si corresponde;
+4. actualiza `allowedDomains` en ambos con los hosts **esperados** de la fuente cuando corresponda;
 5. ejecuta static + live validation.
 
 Nunca cambies una definición publicada sin aumentar su versión.
 
 ## Seguridad
+
+`allowedDomains` documenta los hosts esperados y permite detectar cambios de infraestructura, pero no es una allowlist rígida para CDNs públicos descubiertos durante lectura. La política de ejecución es **HTTPS público solamente**. Yomuhon y el live validator rechazan destinos locales o no enrutable públicamente.
 
 No añadir:
 

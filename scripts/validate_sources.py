@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import html as html_module
+import ipaddress
 import json
 import re
 import sys
@@ -63,6 +64,59 @@ def domain_matches(host: str, allowed: Iterable[str]) -> bool:
         for item in allowed
     )
 
+
+
+_WARNED_UNEXPECTED_PUBLIC_HOSTS: set[tuple[str, str, str]] = set()
+_LOCAL_HOST_SUFFIXES = (
+    ".localhost",
+    ".local",
+    ".localdomain",
+    ".lan",
+    ".internal",
+    ".home.arpa",
+)
+
+
+def is_public_https_url(value: str) -> bool:
+    parsed = urlparse(value)
+    if parsed.scheme.lower() != "https" or not parsed.hostname:
+        return False
+
+    host = parsed.hostname.lower().strip(".")
+    if host == "localhost" or host.endswith(_LOCAL_HOST_SUFFIXES):
+        return False
+
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        # Single-label hosts normally resolve through a local search domain.
+        return "." in host
+
+    return address.is_global
+
+
+def require_public_https_url(value: str, context: str) -> None:
+    if not is_public_https_url(value):
+        raise ValidationError(f"{context}: blocked non-public HTTPS destination: {value}")
+
+
+def warn_unexpected_public_host(url: str, config: dict[str, Any], context: str) -> None:
+    host = urlparse(url).hostname or ""
+    if domain_matches(host, config["allowedDomains"]):
+        return
+
+    key = (str(config.get("id") or "unknown"), context, host.lower())
+    if key in _WARNED_UNEXPECTED_PUBLIC_HOSTS:
+        return
+    _WARNED_UNEXPECTED_PUBLIC_HOSTS.add(key)
+    print(
+        f"LIVE WARN: {key[0]} | unexpected public host context={context} host={host}",
+        file=sys.stderr,
+    )
+
+
+def source_headers(config: dict[str, Any]) -> dict[str, str]:
+    return dict((config.get("network") or {}).get("headers") or {})
 
 def assert_https_url(value: Any, context: str) -> None:
     parsed = urlparse(value if isinstance(value, str) else "")
@@ -373,14 +427,21 @@ def request_session() -> Any:
 
 
 def request_json(
-    session: Any, config: dict[str, Any], request: dict[str, Any],
-    variables: dict[str, str], arrays: dict[str, list[str]], timeout: float,
+    session: Any,
+    config: dict[str, Any],
+    request: dict[str, Any],
+    variables: dict[str, str],
+    arrays: dict[str, list[str]],
+    timeout: float,
     extra: list[tuple[str, str]] | None = None,
 ) -> Any:
-    url = urljoin(config["baseURL"].rstrip("/") + "/", expand(request["path"], variables).lstrip("/"))
-    host = urlparse(url).hostname or ""
-    if not domain_matches(host, config["allowedDomains"]):
-        raise ValidationError(f"Blocked API host: {host}")
+    url = urljoin(
+        config["baseURL"].rstrip("/") + "/",
+        expand(request["path"], variables).lstrip("/"),
+    )
+    require_public_https_url(url, "API request")
+    warn_unexpected_public_host(url, config, "api request")
+
     query: list[tuple[str, str]] = list(extra or [])
     for key, raw in (request.get("query") or {}).items():
         if isinstance(raw, str) and raw == "{{languages}}":
@@ -391,14 +452,15 @@ def request_json(
             query.append((key, "true" if raw else "false"))
         else:
             query.append((key, expand(str(raw), variables)))
-    headers = {
-        "Accept": "application/json", "User-Agent": "YomuhonSourceValidator/3.0",
-        **((config.get("network") or {}).get("headers") or {}),
-    }
+
+    headers = source_headers(config)
+    headers.setdefault("Accept", "application/json")
+    headers.setdefault("User-Agent", "YomuhonSourceValidator/3.1")
     response = session.get(url, params=query, headers=headers, timeout=timeout)
+    require_public_https_url(response.url, "API redirect")
+    warn_unexpected_public_host(response.url, config, "api redirect")
     response.raise_for_status()
     return response.json()
-
 
 def paginate_api(
     session: Any, config: dict[str, Any], operation: dict[str, Any],
@@ -564,33 +626,92 @@ def first_string(root: Any, paths: list[str]) -> str | None:
     return None
 
 
-def verify_image(session: Any, url: str, config: dict[str, Any], timeout: float) -> None:
-    host = urlparse(url).hostname or ""
-    if not domain_matches(host, config["allowedDomains"]):
-        raise ValidationError(f"Blocked image host: {host}")
-    headers = {"User-Agent": "YomuhonSourceValidator/3.0", "Range": "bytes=0-2047"}
-    response = session.get(url, headers=headers, timeout=timeout, stream=True)
-    response.raise_for_status()
-    content_type = response.headers.get("content-type", "").lower()
-    if not content_type.startswith("image/") and not IMAGE_EXT_RE.search(url):
-        raise ValidationError(f"Page URL is not an image: {url}")
-    next(response.iter_content(chunk_size=256), b"")
-    response.close()
+def verify_image(
+    session: Any,
+    url: str,
+    config: dict[str, Any],
+    timeout: float,
+    referer_url: str | None = None,
+) -> None:
+    require_public_https_url(url, "Page image")
+    warn_unexpected_public_host(url, config, "page image")
 
+    declared_headers = source_headers(config)
+    declared_referer = declared_headers.get("Referer")
+    base_url = config["baseURL"].rstrip("/") + "/"
+    image = urlparse(url)
+    image_origin = f"{image.scheme}://{image.netloc}/" if image.scheme and image.netloc else None
+
+    referers: list[str | None] = []
+    if referer_url:
+        referers.append(referer_url)
+        parsed_referer = urlparse(referer_url)
+        if parsed_referer.scheme and parsed_referer.netloc:
+            referers.append(f"{parsed_referer.scheme}://{parsed_referer.netloc}/")
+    referers.extend([declared_referer, base_url, image_origin, None])
+
+    unique_referers: list[str | None] = []
+    seen_referers: set[str] = set()
+    for referer in referers:
+        key = referer or "<none>"
+        if key in seen_referers:
+            continue
+        seen_referers.add(key)
+        unique_referers.append(referer)
+
+    last_response: Any | None = None
+    for position, referer in enumerate(unique_referers):
+        headers = source_headers(config)
+        headers.setdefault(
+            "Accept",
+            "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        )
+        headers.setdefault("User-Agent", "Mozilla/5.0 YomuhonSourceValidator/3.1")
+        headers["Range"] = "bytes=0-2047"
+        if referer is None:
+            headers.pop("Referer", None)
+        else:
+            headers["Referer"] = referer
+
+        response = session.get(url, headers=headers, timeout=timeout, stream=True)
+        last_response = response
+        require_public_https_url(response.url, "Page image redirect")
+        warn_unexpected_public_host(response.url, config, "page image redirect")
+
+        if response.status_code in {401, 403} and position + 1 < len(unique_referers):
+            response.close()
+            continue
+
+        response.raise_for_status()
+        content_type = response.headers.get("content-type", "").lower()
+        if not content_type.startswith("image/") and not IMAGE_EXT_RE.search(response.url):
+            response.close()
+            raise ValidationError(f"Page URL is not an image: {response.url}")
+
+        next(response.iter_content(chunk_size=256), b"")
+        response.close()
+        return
+
+    if last_response is not None:
+        last_response.raise_for_status()
+    raise ValidationError(f"Unable to validate page image: {url}")
 
 def fetch_html(session: Any, url: str, config: dict[str, Any], timeout: float) -> str:
-    host = urlparse(url).hostname or ""
-    if not domain_matches(host, config["allowedDomains"]):
-        raise ValidationError(f"Blocked document host: {host}")
-    headers = {
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "User-Agent": "Mozilla/5.0 YomuhonSourceValidator/3.0",
-        **((config.get("network") or {}).get("headers") or {}),
-    }
+    require_public_https_url(url, "Document request")
+    warn_unexpected_public_host(url, config, "document request")
+
+    headers = source_headers(config)
+    headers.setdefault(
+        "Accept",
+        "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    )
+    headers.setdefault("User-Agent", "Mozilla/5.0 YomuhonSourceValidator/3.1")
+
     response = session.get(url, headers=headers, timeout=timeout)
+    require_public_https_url(response.url, "Document redirect")
+    warn_unexpected_public_host(response.url, config, "document redirect")
     response.raise_for_status()
     return response.text
-
 
 def cleanup_text(value: str, config: dict[str, Any]) -> str:
     cleanup = config.get("cleanup") or {}
@@ -904,7 +1025,7 @@ def run_html(entry: dict[str, Any], config: dict[str, Any], test: dict[str, Any]
         if len(pages) < test["expected"]["minPages"]:
             raise ValidationError("Reader returned too few pages")
         report.image_url = pages[0]
-        verify_image(session, pages[0], config, timeout)
+        verify_image(session, pages[0], config, timeout, referer_url=chapters[0]["url"])
         validate_live_discovery_html(report, session, config, test, timeout)
         report.status = "passed"
     except Exception as exc:  # noqa: BLE001

@@ -40,3 +40,18 @@ Search
 ```
 
 Diagnostics never have to be pressed by a normal user before reading.
+
+## Network destinations and `allowedDomains`
+
+`allowedDomains` is expected-host metadata. It documents the normal API, website and CDN families used by a source and lets diagnostics surface infrastructure drift.
+
+It is **not** a hard runtime allowlist for URLs discovered from a source response. Public HTTPS CDNs may use dynamic or previously unseen hosts. Yomuhon allows those destinations and records an unexpected-host diagnostic.
+
+The hard network boundary is public HTTPS:
+
+- HTTPS public hosts are eligible.
+- `localhost`, single-label/local hostnames and common local-only suffixes are rejected.
+- loopback, private, link-local, carrier-grade NAT, documentation, benchmark, multicast and reserved literal IP ranges are rejected.
+- HTTP and non-web schemes are rejected.
+
+This keeps dynamic CDN discovery working without allowing a declarative source to target local devices or private network services.

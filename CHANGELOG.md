@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-12 — Public HTTPS runtime policy
+
+- Treat `allowedDomains` as expected-host diagnostics instead of a hard block for dynamically discovered public CDN hosts.
+- Keep a hard boundary around public HTTPS and reject localhost, local-only hostnames, private/link-local/loopback and other non-global literal IP destinations.
+- Make the live validator warn on unexpected public hosts and continue the reading-path check.
+- Reuse each source's declared network headers when validating the first page image, including `Referer` and `User-Agent` required by protected CDNs.
+
 ## 2026-07-12 — CI and publication semantics
 
 - Restore `.github/workflows/validate-sources.yml` with static validation on relevant pushes and pull requests.
