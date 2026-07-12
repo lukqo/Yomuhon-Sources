@@ -20,6 +20,8 @@ Cada fuente publicada en `index.json` debe tener:
 
 Una fuente se publica `stable` únicamente después de pasar Search → Detail → Chapters → Pages → First image. Las fuentes nuevas o en observación permanecen `testing`.
 
+`index.json` es la autoridad de publicación. Una definición `stable` o `testing` con `enabled: true` puede usarse inmediatamente por Yomuhon; el botón de diagnóstico no es una puerta de activación. En schema V1, `enabledByDefault` es un campo legado de compatibilidad que debe permanecer `false` y no controla la activación. Consulta `docs/publication-semantics.md`.
+
 ## Añadir una fuente
 
 Requiere Python 3.10 o superior.
@@ -69,7 +71,9 @@ Search
 
 Cuando el test declara Discover, también prueba Popular y/o género real.
 
-GitHub Actions ejecuta static en push y pull request. En `main`, ejecución manual y cada 12 horas también ejecuta live validation y conserva el reporte como artifact.
+GitHub Actions ejecuta static en push y pull request. En `main`, ejecución manual y los horarios de las 00:17 y 12:17 UTC también ejecutan live validation y conservan `live-source-report.json` como artifact durante 14 días.
+
+El horario evita el minuto `0`, que GitHub identifica como un periodo de mayor carga para workflows programados.
 
 ## Estructura
 
@@ -116,4 +120,4 @@ No añadir:
 - secretos, tokens o cookies privadas;
 - bypass de CAPTCHA o protecciones anti-bot.
 
-Consulta `docs/discover-contract.md` y `docs/identity-metadata-contract.md` para las capacidades añadidas a Discover e identidad de obras.
+Consulta `docs/discover-contract.md`, `docs/identity-metadata-contract.md`, `docs/publication-semantics.md` y `docs/source-authoring.md` para el contrato de capacidades y publicación.

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-12 — CI and publication semantics
+
+- Restore `.github/workflows/validate-sources.yml` with static validation on relevant pushes and pull requests.
+- Run live reading-path validation manually or every 12 hours on `main`, with the JSON report retained as a 14-day artifact.
+- Document `index.enabled` plus `index.status` as the publication authority.
+- Clarify that schema V1 `enabledByDefault: false` is a legacy compatibility sentinel, not a local activation gate.
+
 ## 2026-07-11 — MangaKatana v4
 
 - MangaKatana v4 alinea búsqueda, popular, detalle y capítulos con las regiones de contenido mantenidas por la fuente.
