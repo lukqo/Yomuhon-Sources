@@ -22,7 +22,7 @@
     {
       "id": "mangakatana_json",
       "name": "MangaKatana JSON",
-      "version": 3,
+      "version": 4,
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangakatana.json",
@@ -34,7 +34,7 @@
         "i.mkklcdnv6tempv2.com",
         "i.mkklcdnv6.com"
       ],
-      "notes": "Declarative HTML source."
+      "notes": "Declarative HTML source. v4 narrows search/detail/chapter selectors to MangaKatana content regions."
     },
     {
       "id": "mangapill_json",

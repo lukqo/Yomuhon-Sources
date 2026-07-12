@@ -1,0 +1,18 @@
+Yomuhon-Sources MangaKatana v4 validation — 2026-07-11
+=======================================================
+
+Static repository validation: PASS
+- 3 source definitions
+- 3 test definitions
+- no orphan configs/tests
+- MangaKatana v4 index/config version parity
+- selector validation accepts tr:has(.chapter)
+
+Authoritative chapter-number validation: PASS
+- declared number.regex rejects candidates that do not match
+- validator sorts numbered chapters according to the declared sort mode
+
+Live provider validation was not executed from this container because direct DNS/network access is unavailable here.
+The source shape was aligned to the maintained MangaKatana extension's current selectors:
+- list/search items: div#book_list > div.item
+- chapters: tr:has(.chapter), first a[href]

@@ -82,7 +82,26 @@ def assert_domains(domains: Any, context: str) -> list[str]:
 def assert_supported_selector(selector: str, context: str) -> None:
     # Colons inside attribute values (for example og:title) are valid.
     without_attributes = re.sub(r"\[[^\]]*\]", "", selector)
-    if ":" in without_attributes or "+" in without_attributes or "~" in without_attributes:
+
+    def replace_has(match: re.Match[str]) -> str:
+        inner = match.group(1).strip()
+        inner_without_attributes = re.sub(r"\[[^\]]*\]", "", inner)
+        if (
+            not inner
+            or any(token in inner_without_attributes for token in (":", "+", "~", ">"))
+            or any(character.isspace() for character in inner_without_attributes)
+        ):
+            raise ValidationError(
+                f"{context}: :has() accepts one simple descendant selector, got {inner!r}"
+            )
+        return ""
+
+    try:
+        without_supported_has = re.sub(r":has\(([^()]*)\)", replace_has, without_attributes)
+    except ValidationError:
+        raise
+
+    if ":has(" in without_supported_has or any(token in without_supported_has for token in (":", "+", "~", ">")):
         raise ValidationError(f"{context}: selector uses syntax unsupported by Yomuhon: {selector!r}")
 
 
@@ -553,9 +572,35 @@ def parse_html_chapters(config: dict[str, Any], html_text: str, manga_url: str) 
         url = urljoin(manga_url, raw_url)
         if url in seen:
             continue
-        seen.add(url)
         title = extract_html_field(item, selector.get("title"), config) or item.get_text(" ", strip=True)
-        chapters.append({"id": url, "title": cleanup_text(title, config), "url": url})
+
+        number_rule = selector.get("number")
+        number: float | None = None
+        if isinstance(number_rule, dict):
+            number_source = url if number_rule.get("from") == "url" else title
+            match = re.search(number_rule["regex"], number_source, re.IGNORECASE | re.DOTALL)
+            if not match:
+                # A declared chapter-number rule is authoritative. Keep the
+                # repository validator aligned with the app runtime and reject
+                # unrelated links instead of inventing chapter zero.
+                continue
+            raw_number = match.group(1) if match.groups() else match.group(0)
+            try:
+                number = float(raw_number)
+            except ValueError:
+                continue
+
+        seen.add(url)
+        chapter = {"id": url, "title": cleanup_text(title, config), "url": url}
+        if number is not None:
+            chapter["number"] = number
+        chapters.append(chapter)
+
+    sort_mode = selector.get("sort")
+    if sort_mode in ("numberAscending", "numberDescending") and chapters and all("number" in chapter for chapter in chapters):
+        chapters.sort(key=lambda chapter: (chapter["number"], chapter["id"]))
+        if sort_mode == "numberDescending":
+            chapters.reverse()
     return chapters
 
 

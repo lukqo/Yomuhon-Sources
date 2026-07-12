@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "mangakatana_json",
   "name": "MangaKatana JSON",
-  "version": 3,
+  "version": 4,
   "language": "en",
   "baseURL": "https://mangakatana.com",
   "engineMode": "html",
@@ -45,11 +45,10 @@
   },
   "selectors": {
     "popular": {
-      "container": ".item",
+      "container": "div#book_list div.item",
       "title": {
         "selectors": [
-          ".title a",
-          "a"
+          "div.text h3 a"
         ],
         "attrs": [
           "text"
@@ -61,8 +60,7 @@
       },
       "url": {
         "selectors": [
-          ".title a",
-          "a"
+          "div.text h3 a"
         ],
         "attrs": [
           "href"
@@ -82,13 +80,12 @@
       }
     },
     "search": {
-      "container": "a[href*='/manga/']",
+      "container": "div#book_list div.item",
       "title": {
         "selectors": [
-          "*"
+          "div.text h3 a"
         ],
         "attrs": [
-          "title",
           "text"
         ],
         "cleanup": [
@@ -97,6 +94,9 @@
         ]
       },
       "url": {
+        "selectors": [
+          "div.text h3 a"
+        ],
         "attrs": [
           "href"
         ],
@@ -117,12 +117,10 @@
     "details": {
       "title": {
         "selectors": [
-          "h1",
-          "meta[property='og:title']"
+          "h1.heading"
         ],
         "attrs": [
-          "text",
-          "content"
+          "text"
         ],
         "cleanup": [
           "decodeEntities",
@@ -131,14 +129,11 @@
       },
       "synopsis": {
         "selectors": [
-          ".summary",
-          ".description",
-          "meta[name='description']",
-          "meta[property='og:description']"
+          ".summary p",
+          ".summary"
         ],
         "attrs": [
-          "text",
-          "content"
+          "text"
         ],
         "cleanup": [
           "stripHTML",
@@ -148,21 +143,21 @@
       },
       "cover": {
         "selectors": [
-          ".cover img",
-          "meta[property='og:image']",
-          "img"
+          "div.media div.cover img"
         ],
         "attrs": [
           "data-src",
           "data-original",
-          "src",
-          "content"
+          "src"
         ]
       }
     },
     "chapters": {
-      "container": "a[href*='/manga/']",
+      "container": "tr:has(.chapter)",
       "title": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
           "text",
           "title"
@@ -173,6 +168,9 @@
         ]
       },
       "url": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
           "href"
         ],
@@ -180,7 +178,7 @@
       },
       "number": {
         "from": "url",
-        "regex": "/c([0-9]+(?:\\\\.[0-9]+)?)"
+        "regex": "/c([0-9]+(?:\\.[0-9]+)?)"
       },
       "sort": "numberAscending"
     },

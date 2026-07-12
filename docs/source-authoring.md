@@ -210,18 +210,26 @@ tag.clase
 tag[attr]
 tag[attr='valor']
 tag[attr*='fragmento']
+tag:has(.clase)
 descendiente descendiente
 selector, selector
 ```
+
+`:has(...)` solo acepta un selector simple descendiente, por ejemplo `tr:has(.chapter)`. Esto permite seleccionar un contenedor por la presencia de una clase o elemento hijo sin introducir lógica específica de una fuente en la app.
 
 No uses:
 
 ```text
 :first-child
 :nth-child(...)
+>
 +
 ~
 ```
+
+### Regla de número de capítulo
+
+Cuando `selectors.chapters.number` declara `regex`, la expresión es **autoritaria**. Un candidato que no coincide se descarta; Yomuhon no cae a heurísticas genéricas ni lo convierte en capítulo `0`. Usa esta regla para impedir que enlaces relacionados o capítulos de otras obras entren en la lista.
 
 ## 6. Fuentes JSON API
 

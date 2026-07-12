@@ -128,11 +128,12 @@ tag.clase
 tag[attr]
 tag[attr='valor']
 tag[attr*='fragmento']
+tag:has(.clase)
 descendiente descendiente
 selector, selector
 ```
 
-No uses pseudoclases ni combinadores `+` o `~`.
+`:has(...)` acepta únicamente **un selector simple descendiente**. No uses otras pseudoclases ni combinadores `>`, `+` o `~`.
 
 ### `json-api`
 

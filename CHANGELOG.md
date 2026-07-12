@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-11 — MangaKatana v4
+
+- MangaKatana v4 alinea búsqueda, popular, detalle y capítulos con las regiones de contenido mantenidas por la fuente.
+- Los capítulos usan `tr:has(.chapter)` en vez de seleccionar todos los enlaces `/manga/` del documento.
+- El validador acepta el subconjunto genérico `:has(<selector simple>)`.
+- Una `number.regex` declarada pasa a ser autoritaria también en la validación live: los candidatos que no coinciden se descartan.
+
 ## 2026-07-11 — Authoring workflow
 
 - Added `scripts/new_source.py` to scaffold and register HTML or JSON API sources.
