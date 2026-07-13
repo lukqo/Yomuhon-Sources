@@ -1,47 +1,85 @@
 {
   "schemaVersion": 1,
-  "id": "mangapill_json",
-  "name": "MangaPill JSON",
-  "version": 3,
-  "language": "en",
-  "baseURL": "https://mangapill.com",
+  "id": "zonatmo_es",
+  "name": "ZonaTMO",
+  "version": 1,
+  "language": "es",
+  "baseURL": "https://zonatmo.org",
   "engineMode": "html",
   "enabledByDefault": false,
   "experimental": true,
   "allowedDomains": [
-    "mangapill.com",
-    "cdn.mangapill.com",
-    "cdn.readdetectiveconan.com"
+    "zonatmo.org",
+    "storage.zonatmo.org",
+    "storage2.zonatmo.org"
   ],
   "supports": {
     "search": true,
-    "popular": false,
+    "popular": true,
     "details": true,
     "chapters": true,
-    "pages": true
+    "pages": true,
+    "genres": false
   },
   "network": {
     "headers": {
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
-      "Referer": "https://mangapill.com/"
+      "Referer": "https://zonatmo.org/"
     }
   },
   "routes": {
+    "popular": {
+      "path": "/"
+    },
     "search": {
-      "path": "/search",
+      "path": "/",
       "query": {
         "q": "{{query}}"
       }
     }
   },
   "selectors": {
-    "search": {
-      "container": "a[href*='/manga/']",
+    "popular": {
+      "container": "a[href*='/library/']",
       "title": {
         "attrs": [
-          "title",
-          "text"
+          "text",
+          "title"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ]
+      },
+      "url": {
+        "attrs": [
+          "href"
+        ],
+        "required": true
+      },
+      "cover": {
+        "selectors": [
+          "img"
+        ],
+        "attrs": [
+          "data-src",
+          "data-original",
+          "data-lazy-src",
+          "src"
+        ]
+      },
+      "htmlScope": {
+        "afterRegex": ">\\s*Populares\\s*<",
+        "beforeRegex": ">\\s*Ver todo\\s*<"
+      }
+    },
+    "search": {
+      "container": "a[href*='/library/']",
+      "title": {
+        "attrs": [
+          "text",
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
@@ -110,11 +148,10 @@
       }
     },
     "chapters": {
-      "container": "a[href*='/chapters/']",
+      "container": "li",
       "title": {
         "attrs": [
-          "text",
-          "title"
+          "text"
         ],
         "cleanup": [
           "decodeEntities",
@@ -122,14 +159,19 @@
         ]
       },
       "url": {
+        "selectors": [
+          "a[href*='/viewer/']",
+          "a[href*='/chapter/']",
+          "a[href*='/read/']"
+        ],
         "attrs": [
           "href"
         ],
         "required": true
       },
       "number": {
-        "from": "url",
-        "regex": "chapter-([0-9]+(?:\\.[0-9]+)?)"
+        "from": "text",
+        "regex": "(?:Cap[ií]tulo|Chapter)\\s*([0-9]+(?:\\.[0-9]+)?)"
       },
       "sort": "numberAscending"
     },
@@ -137,7 +179,7 @@
       "extractors": [
         {
           "type": "css",
-          "selector": "img[alt*='Page'], img[src*='cdn.mangapill.com'], img[src*='cdn.readdetectiveconan.com'], img[data-src*='cdn.readdetectiveconan.com']",
+          "selector": "img[src*='zonatmo.org'], img[data-src*='zonatmo.org'], img[src*='/storage/'], img[data-src*='/storage/']",
           "attrs": [
             "data-src",
             "data-original",
@@ -148,7 +190,7 @@
         },
         {
           "type": "regex",
-          "pattern": "(https?:\\\\?/\\\\?/[^\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\"']*)?)"
+          "pattern": "(https?:\\\\?/\\\\?/(?:storage2?\\.)?zonatmo\\.org/[^\\\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\\\"']*)?)"
         }
       ],
       "filters": {
@@ -167,8 +209,8 @@
           "icon",
           "favicon",
           "sprite",
-          "doubleclick",
-          "analytics"
+          "gravatar",
+          "covers/"
         ]
       }
     }
@@ -177,12 +219,13 @@
     "decodeHTMLEntities": true,
     "normalizeWhitespace": true,
     "removeText": [
-      "Read Manga Online",
-      "Advertisement"
+      "TU MANGA ONLINE",
+      "ZonaTMO",
+      "Leer online"
     ]
   },
   "tests": {
-    "query": "hime no dameshi",
+    "query": "gachiakuta",
     "minSearchResults": 1,
     "minChapters": 1,
     "minPages": 1

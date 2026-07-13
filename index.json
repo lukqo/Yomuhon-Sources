@@ -52,6 +52,23 @@
         "cdn.readdetectiveconan.com"
       ],
       "notes": "Declarative HTML source."
+    },
+    {
+      "id": "zonatmo_es",
+      "name": "ZonaTMO",
+      "version": 1,
+      "language": "es",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/zonatmo.json",
+      "enabled": true,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "zonatmo.org",
+        "storage.zonatmo.org",
+        "storage2.zonatmo.org"
+      ],
+      "notes": "Experimental Spanish source for zonatmo.org. Keep testing until Search → Detail → Chapters → Pages → First image passes live validation and Yomuhon."
     }
   ]
 }
