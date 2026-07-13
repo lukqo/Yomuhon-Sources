@@ -7,8 +7,7 @@
   "probe": {
     "query": "gachiakuta",
     "expectedTitleContains": "Gachiakuta",
-    "mangaPathContains": "/library/",
-    "chapterPathContains": "/"
+    "mangaPathContains": "/library/"
   },
   "expected": {
     "minSearchResults": 1,
@@ -16,8 +15,6 @@
     "minPages": 1
   },
   "discover": {
-    "popular": {
-      "minResults": 1
-    }
+    "minPopularResults": 1
   }
 }

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "id": "zonatmo_es",
-  "name": "ZonaTMO",
-  "version": 1,
-  "language": "es",
-  "baseURL": "https://zonatmo.org",
+  "id": "mangakatana_json",
+  "name": "MangaKatana JSON",
+  "version": 7,
+  "language": "en",
+  "baseURL": "https://mangakatana.com",
   "engineMode": "html",
   "enabledByDefault": false,
   "experimental": true,
   "allowedDomains": [
-    "zonatmo.org",
-    "storage.zonatmo.org",
-    "storage2.zonatmo.org"
+    "mangakatana.com",
+    "i.mkklcdnv6tempv2.com",
+    "i.mkklcdnv6.com"
   ],
   "supports": {
     "search": true,
@@ -19,13 +19,12 @@
     "details": true,
     "chapters": true,
     "pages": true,
-    "genres": false
+    "genres": true
   },
   "network": {
     "headers": {
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
-      "Referer": "https://zonatmo.org/"
+      "Referer": "https://mangakatana.com/"
     }
   },
   "routes": {
@@ -35,17 +34,17 @@
     "search": {
       "path": "/",
       "query": {
-        "q": "{{query}}"
+        "search": "{{query}}",
+        "search_by": "book_name"
       }
     }
   },
   "selectors": {
     "popular": {
-      "container": "a[href*='/library/']",
+      "container": "a[href*=\"/manga/\"]",
       "title": {
         "attrs": [
-          "text",
-          "title"
+          "text"
         ],
         "cleanup": [
           "decodeEntities",
@@ -63,19 +62,25 @@
           "img"
         ],
         "attrs": [
+          "src",
           "data-src",
           "data-original",
-          "data-lazy-src",
-          "src"
+          "data-lazy-src"
         ]
+      },
+      "htmlScope": {
+        "afterRegex": ">\\s*Hot Manga\\s*<",
+        "beforeRegex": "<footer\\b"
       }
     },
     "search": {
-      "container": "a[href*='/library/']",
+      "container": "div#book_list div.item",
       "title": {
+        "selectors": [
+          "div.text h3 a"
+        ],
         "attrs": [
-          "text",
-          "title"
+          "text"
         ],
         "cleanup": [
           "decodeEntities",
@@ -83,6 +88,9 @@
         ]
       },
       "url": {
+        "selectors": [
+          "div.text h3 a"
+        ],
         "attrs": [
           "href"
         ],
@@ -103,12 +111,10 @@
     "details": {
       "title": {
         "selectors": [
-          "h1",
-          "meta[property='og:title']"
+          "h1.heading"
         ],
         "attrs": [
-          "text",
-          "content"
+          "text"
         ],
         "cleanup": [
           "decodeEntities",
@@ -117,11 +123,11 @@
       },
       "synopsis": {
         "selectors": [
-          "meta[name='description']",
-          "meta[property='og:description']"
+          ".summary p",
+          ".summary"
         ],
         "attrs": [
-          "content"
+          "text"
         ],
         "cleanup": [
           "stripHTML",
@@ -131,23 +137,24 @@
       },
       "cover": {
         "selectors": [
-          "meta[property='og:image']",
-          "img"
+          "div.media div.cover img"
         ],
         "attrs": [
-          "content",
           "data-src",
           "data-original",
-          "data-lazy-src",
           "src"
         ]
       }
     },
     "chapters": {
-      "container": "li",
+      "container": "tr:has(.chapter)",
       "title": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
-          "text"
+          "text",
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
@@ -156,9 +163,7 @@
       },
       "url": {
         "selectors": [
-          "a[href*='/viewer/']",
-          "a[href*='/chapter/']",
-          "a[href*='/read/']"
+          "a"
         ],
         "attrs": [
           "href"
@@ -166,8 +171,8 @@
         "required": true
       },
       "number": {
-        "from": "text",
-        "regex": "(?:Cap[ií]tulo|Chapter)\\s*([0-9]+(?:\\.[0-9]+)?)"
+        "from": "url",
+        "regex": "/c([0-9]+(?:\\.[0-9]+)?)"
       },
       "sort": "numberAscending"
     },
@@ -175,7 +180,7 @@
       "extractors": [
         {
           "type": "css",
-          "selector": "img[src*='zonatmo.org'], img[data-src*='zonatmo.org'], img[src*='/storage/'], img[data-src*='/storage/']",
+          "selector": "img",
           "attrs": [
             "data-src",
             "data-original",
@@ -186,7 +191,7 @@
         },
         {
           "type": "regex",
-          "pattern": "(https?:\\\\?/\\\\?/(?:storage2?\\.)?zonatmo\\.org/[^\\\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\\\"']*)?)"
+          "pattern": "(https?:(?:\\\\/\\\\/|//)[^\"'\\\\\\s]+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\"'\\\\\\s]*)?)"
         }
       ],
       "filters": {
@@ -201,12 +206,12 @@
           "avatar",
           "placeholder",
           "banner",
-          "ads/",
+          "ads",
           "icon",
           "favicon",
           "sprite",
-          "gravatar",
-          "covers/"
+          "doubleclick",
+          "analytics"
         ]
       }
     }
@@ -217,11 +222,10 @@
         "path": "/"
       },
       "selector": {
-        "container": "a[href*='/library/']",
+        "container": "a[href*=\"/manga/\"]",
         "title": {
           "attrs": [
-            "text",
-            "title"
+            "text"
           ],
           "cleanup": [
             "decodeEntities",
@@ -239,11 +243,109 @@
             "img"
           ],
           "attrs": [
+            "src",
             "data-src",
             "data-original",
-            "data-lazy-src",
-            "src"
+            "data-lazy-src"
           ]
+        },
+        "htmlScope": {
+          "afterRegex": ">\\s*Hot Manga\\s*<",
+          "beforeRegex": "<footer\\b"
+        }
+      }
+    },
+    "genres": {
+      "items": [
+        {
+          "id": "action",
+          "title": "Action",
+          "value": "action"
+        },
+        {
+          "id": "romance",
+          "title": "Romance",
+          "value": "romance"
+        },
+        {
+          "id": "comedy",
+          "title": "Comedy",
+          "value": "comedy"
+        },
+        {
+          "id": "drama",
+          "title": "Drama",
+          "value": "drama"
+        },
+        {
+          "id": "fantasy",
+          "title": "Fantasy",
+          "value": "fantasy"
+        },
+        {
+          "id": "horror",
+          "title": "Horror",
+          "value": "horror"
+        },
+        {
+          "id": "mystery",
+          "title": "Mystery",
+          "value": "mystery"
+        },
+        {
+          "id": "sci-fi",
+          "title": "Sci-Fi",
+          "value": "sci-fi"
+        },
+        {
+          "id": "slice-of-life",
+          "title": "Slice of Life",
+          "value": "slice-of-life"
+        }
+      ],
+      "operation": {
+        "route": {
+          "path": "/genre/{{genre}}/page/{page}",
+          "pagination": {
+            "type": "path",
+            "start": 1,
+            "maxPages": 1
+          }
+        },
+        "selector": {
+          "container": "div#book_list div.item",
+          "title": {
+            "selectors": [
+              "div.text h3 a"
+            ],
+            "attrs": [
+              "text"
+            ],
+            "cleanup": [
+              "decodeEntities",
+              "normalizeWhitespace"
+            ]
+          },
+          "url": {
+            "selectors": [
+              "div.text h3 a"
+            ],
+            "attrs": [
+              "href"
+            ],
+            "required": true
+          },
+          "cover": {
+            "selectors": [
+              "img"
+            ],
+            "attrs": [
+              "data-src",
+              "data-original",
+              "data-lazy-src",
+              "src"
+            ]
+          }
         }
       }
     }
@@ -252,13 +354,14 @@
     "decodeHTMLEntities": true,
     "normalizeWhitespace": true,
     "removeText": [
-      "TU MANGA ONLINE",
-      "ZonaTMO",
-      "Leer online"
+      "Read Manga Online",
+      "Advertisement",
+      "[Cover]",
+      "Cover"
     ]
   },
   "tests": {
-    "query": "gachiakuta",
+    "query": "one piece",
     "minSearchResults": 1,
     "minChapters": 1,
     "minPages": 1
