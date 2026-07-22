@@ -77,7 +77,7 @@
       "language": "en",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_en.json",
-      "enabled": false,
+      "enabled": true,
       "experimental": true,
       "status": "testing",
       "allowedDomains": [
@@ -96,7 +96,7 @@
       "language": "es",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_es.json",
-      "enabled": false,
+      "enabled": true,
       "experimental": true,
       "status": "testing",
       "allowedDomains": [
