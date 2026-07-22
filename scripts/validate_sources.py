@@ -1056,7 +1056,14 @@ def validate_live(
     reports = []
     for entry in selected:
         config = configs[entry["id"]]
-        report = run_json_api(entry, config, tests[entry["id"]], timeout) if config["engineMode"] == "json-api" else run_html(entry, config, tests[entry["id"]], timeout)
+        # YOMUHON_HYBRID_DISPATCH_V1
+        if config.get("operationModes"):
+            from validate_hybrid_sources import run_hybrid_for_main
+            report = run_hybrid_for_main(entry, config, tests[entry["id"]], timeout, SourceReport)
+        elif config["engineMode"] == "json-api":
+            report = run_json_api(entry, config, tests[entry["id"]], timeout)
+        else:
+            report = run_html(entry, config, tests[entry["id"]], timeout)
         reports.append(report)
         marker = "LIVE OK" if report.status == "passed" else "LIVE FAIL"
         print(

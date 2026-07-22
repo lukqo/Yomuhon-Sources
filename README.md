@@ -125,3 +125,7 @@ No añadir:
 - bypass de CAPTCHA o protecciones anti-bot.
 
 Consulta `docs/discover-contract.md`, `docs/identity-metadata-contract.md`, `docs/publication-semantics.md` y `docs/source-authoring.md` para el contrato de capacidades y publicación.
+
+## Fuentes híbridas
+
+Las definiciones pueden combinar operaciones `html` y `json-api` mediante `operationModes`. Consulta `docs/hybrid-source-contract.md`.

@@ -40,3 +40,8 @@
 - Add declarative `json-api` source kind.
 - Move MangaDex discovery/configuration to the repository.
 - Yomuhon no longer requires a bundled MangaDex adapter.
+
+## 2026-07-21 — WEBTOON multilingual source batch
+
+- Added the hybrid operation contract and seven staged WEBTOON language sources.
+- New sources remain disabled until live validation succeeds.

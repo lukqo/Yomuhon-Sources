@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-12",
+  "updatedAt": "2026-07-21",
   "minimumAppVersion": "1.0.0",
   "sources": [
     {
@@ -69,6 +69,139 @@
         "storage2.zonatmo.org"
       ],
       "notes": "Experimental Spanish source for zonatmo.org. Keep testing until Search → Detail → Chapters → Pages → First image passes live validation and Yomuhon."
+    },
+    {
+      "id": "webtoon_en",
+      "name": "WEBTOON English",
+      "version": 1,
+      "language": "en",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_en.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+    },
+    {
+      "id": "webtoon_es",
+      "name": "WEBTOON Español",
+      "version": 1,
+      "language": "es",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_es.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+    },
+    {
+      "id": "webtoon_fr",
+      "name": "WEBTOON Français",
+      "version": 1,
+      "language": "fr",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_fr.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+    },
+    {
+      "id": "webtoon_de",
+      "name": "WEBTOON Deutsch",
+      "version": 1,
+      "language": "de",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_de.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+    },
+    {
+      "id": "webtoon_id",
+      "name": "WEBTOON Indonesia",
+      "version": 1,
+      "language": "id",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_id.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+    },
+    {
+      "id": "webtoon_th",
+      "name": "WEBTOON ไทย",
+      "version": 1,
+      "language": "th",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_th.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+    },
+    {
+      "id": "webtoon_zh_hant",
+      "name": "WEBTOON 繁體中文",
+      "version": 1,
+      "language": "zh-Hant",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/webtoon_zh_hant.json",
+      "enabled": false,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "webtoons.com",
+        "www.webtoons.com",
+        "m.webtoons.com",
+        "webtoon-phinf.pstatic.net",
+        "swebtoon-phinf.pstatic.net"
+      ],
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
     }
   ]
 }

@@ -1,0 +1,20 @@
+{
+  "sourceID": "webtoon_fr",
+  "queries": [
+    "amour"
+  ],
+  "probe": {
+    "query": "amour",
+    "mangaPathContains": "/fr/",
+    "chapterPathContains": "episode_no="
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  },
+  "discover": {
+    "minPopularResults": 1,
+    "minPopularCoveredResults": 1
+  }
+}

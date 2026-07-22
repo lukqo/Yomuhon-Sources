@@ -193,6 +193,12 @@
         }
       },
       "additionalProperties": false
+    },
+    "operationModes": {
+      "$ref": "#/$defs/operationModes"
+    },
+    "identity": {
+      "$ref": "#/$defs/identityConfig"
     }
   },
   "$defs": {
@@ -492,6 +498,11 @@
           "additionalProperties": {
             "$ref": "#/$defs/apiValue"
           }
+        },
+        "baseURL": {
+          "type": "string",
+          "format": "uri",
+          "pattern": "^https://"
         }
       },
       "additionalProperties": false
@@ -637,6 +648,16 @@
             "numberAscending",
             "numberDescending"
           ]
+        },
+        "urlPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "variables": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/apiVariableRule"
+          }
         }
       },
       "additionalProperties": false
@@ -783,6 +804,86 @@
           ]
         }
       ],
+      "additionalProperties": false
+    },
+    "operationModes": {
+      "type": "object",
+      "properties": {
+        "popular": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        },
+        "search": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        },
+        "details": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        },
+        "chapters": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        },
+        "pages": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        },
+        "genres": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "identityConfig": {
+      "type": "object",
+      "properties": {
+        "preserveQueryItems": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.~-]+$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "apiVariableRule": {
+      "type": "object",
+      "required": [
+        "from"
+      ],
+      "properties": {
+        "from": {
+          "enum": [
+            "mangaID",
+            "mangaURL"
+          ]
+        },
+        "regex": {
+          "type": "string",
+          "minLength": 1
+        },
+        "default": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
       "additionalProperties": false
     }
   },
