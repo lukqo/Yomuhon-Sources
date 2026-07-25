@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-25 — WEBTOON notes cleanup
+
+- Removed the "requires Yomuhon v12 or newer" claim from all `webtoon_*` entries: the app's only real version gate is `index.minimumAppVersion` (semver), and no such v12 check exists in the current app code — the note was stale/inaccurate.
+- Fixed `webtoon_en` and `webtoon_es` notes, which were still saying "Keep disabled until live validation passes" despite both being `enabled: true` already.
+- No source config or enabled/disabled state changed — text only.
+
 ## 2026-07-25 — Two new MangaThemesia sources
 
 - Added `lagoonscans` (English) and `mangaesp` (Spanish), both mapped from the public MangaThemesia HTML theme they run on.

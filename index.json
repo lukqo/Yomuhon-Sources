@@ -115,7 +115,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes against the real WEBTOON markup and hybrid chapters API."
     },
     {
       "id": "webtoon_en",
@@ -134,7 +134,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Enabled and passing live validation as of the last check; re-verify if WEBTOON's markup or hybrid chapters API changes."
     },
     {
       "id": "webtoon_es",
@@ -153,7 +153,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Enabled and passing live validation as of the last check; re-verify if WEBTOON's markup or hybrid chapters API changes."
     },
     {
       "id": "webtoon_fr",
@@ -172,7 +172,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes against the real WEBTOON markup and hybrid chapters API."
     },
     {
       "id": "webtoon_id",
@@ -191,7 +191,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes against the real WEBTOON markup and hybrid chapters API."
     },
     {
       "id": "webtoon_th",
@@ -210,7 +210,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes against the real WEBTOON markup and hybrid chapters API."
     },
     {
       "id": "webtoon_zh_hant",
@@ -229,7 +229,7 @@
         "webtoon-phinf.pstatic.net",
         "swebtoon-phinf.pstatic.net"
       ],
-      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes; requires Yomuhon v12 or newer."
+      "notes": "Hybrid declarative WEBTOON source. Keep disabled until live validation passes against the real WEBTOON markup and hybrid chapters API."
     },
     {
       "id": "zonatmo_es",
