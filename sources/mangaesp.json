@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "lectormanga_es",
-  "name": "LectorManga",
+  "id": "mangaesp",
+  "name": "MangaEsp",
   "version": 1,
   "language": "es",
-  "baseURL": "https://lectormanga.com",
+  "baseURL": "https://mangaesp.topmanhuas.org",
   "engineMode": "html",
   "enabledByDefault": false,
   "experimental": true,
   "allowedDomains": [
-    "lectormanga.com"
+    "mangaesp.topmanhuas.org"
   ],
   "supports": {
     "search": true,
@@ -23,34 +23,46 @@
     "headers": {
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
-      "Referer": "https://lectormanga.com/"
+      "Referer": "https://mangaesp.topmanhuas.org/"
     }
   },
   "routes": {
     "popular": {
-      "path": "/"
+      "path": "/manga",
+      "query": {
+        "title": "",
+        "order": "popular",
+        "page": "1"
+      }
     },
     "search": {
-      "path": "/library",
+      "path": "/manga",
       "query": {
-        "title": "{{query}}"
+        "title": "{{query}}",
+        "page": "1"
       }
     }
   },
   "selectors": {
     "popular": {
-      "container": "a[href*='/library/']",
+      "container": ".listupd .bs .bsx, .listo .bs .bsx, .utao .uta .imgu",
       "title": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
-          "title",
-          "text"
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
           "normalizeWhitespace"
-        ]
+        ],
+        "required": true
       },
       "url": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
           "href"
         ],
@@ -61,25 +73,32 @@
           "img"
         ],
         "attrs": [
-          "src",
+          "data-lazy-src",
           "data-src",
-          "data-original"
+          "data-cfsrc",
+          "src"
         ]
       }
     },
     "search": {
-      "container": "a[href*='/library/']",
+      "container": ".listupd .bs .bsx, .listo .bs .bsx, .utao .uta .imgu",
       "title": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
-          "title",
-          "text"
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
           "normalizeWhitespace"
-        ]
+        ],
+        "required": true
       },
       "url": {
+        "selectors": [
+          "a"
+        ],
         "attrs": [
           "href"
         ],
@@ -90,20 +109,33 @@
           "img"
         ],
         "attrs": [
-          "src",
+          "data-lazy-src",
           "data-src",
-          "data-original"
+          "data-cfsrc",
+          "src"
         ]
       }
     },
     "details": {
       "title": {
         "selectors": [
-          "meta[property='og:title']",
-          "h1"
+          "h1.entry-title"
         ],
         "attrs": [
-          "content",
+          "text"
+        ],
+        "cleanup": [
+          "decodeEntities",
+          "normalizeWhitespace"
+        ],
+        "required": true
+      },
+      "synopsis": {
+        "selectors": [
+          ".entry-content[itemprop='description']",
+          ".desc"
+        ],
+        "attrs": [
           "text"
         ],
         "cleanup": [
@@ -111,40 +143,26 @@
           "normalizeWhitespace"
         ]
       },
-      "synopsis": {
-        "selectors": [
-          "meta[name='description']",
-          "meta[property='og:description']"
-        ],
-        "attrs": [
-          "content"
-        ],
-        "cleanup": [
-          "stripHTML",
-          "decodeEntities",
-          "normalizeWhitespace"
-        ]
-      },
       "cover": {
         "selectors": [
-          "meta[property='og:image']",
-          "img"
+          "div[itemprop='image'] img",
+          ".thumb img"
         ],
         "attrs": [
-          "content",
-          "src",
-          "data-src"
+          "data-lazy-src",
+          "data-src",
+          "src"
         ]
       }
     },
     "chapters": {
-      "container": "div#chapters li",
+      "container": "#chapterlist li",
       "title": {
         "selectors": [
-          "h4"
+          ".chapternum",
+          "a"
         ],
         "attrs": [
-          "title",
           "text"
         ],
         "cleanup": [
@@ -162,26 +180,26 @@
         "required": true
       },
       "number": {
-        "from": "text",
-        "regex": "(?:Cap[ií]tulo|Chapter)\\s*([0-9]+(?:\\.[0-9]+)?)"
+        "from": "url",
+        "regex": "(?:capitulo|chapter)-([0-9]+(?:\\.[0-9]+)?)"
       },
-      "sort": "numberAscending"
+      "sort": "numberDescending"
     },
     "pages": {
       "extractors": [
         {
           "type": "css",
-          "selector": "div#main-container img",
+          "selector": "div#readerarea img",
           "attrs": [
+            "data-lazy-src",
             "data-src",
-            "data-original",
-            "srcset",
+            "data-cfsrc",
             "src"
           ]
         },
         {
           "type": "regex",
-          "pattern": "(https?:\\\\?/\\\\?/[^\"'\\\\\\s]*lectormanga\\.com/[^\"'\\\\\\s]+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\"'\\\\\\s]*)?)"
+          "pattern": "(https?:\\\\?/\\\\?/[^\"']+?\\.(?:jpg|jpeg|png|webp)(?:\\?[^\"']*)?)"
         }
       ],
       "filters": {
@@ -199,59 +217,18 @@
           "ads/",
           "icon",
           "favicon",
-          "sprite",
-          "gravatar",
-          "covers/"
+          "sprite"
         ]
-      }
-    }
-  },
-  "discover": {
-    "popular": {
-      "route": {
-        "path": "/"
-      },
-      "selector": {
-        "container": "a[href*='/library/']",
-        "title": {
-          "attrs": [
-            "title",
-            "text"
-          ],
-          "cleanup": [
-            "decodeEntities",
-            "normalizeWhitespace"
-          ]
-        },
-        "url": {
-          "attrs": [
-            "href"
-          ],
-          "required": true
-        },
-        "cover": {
-          "selectors": [
-            "img"
-          ],
-          "attrs": [
-            "src",
-            "data-src",
-            "data-original"
-          ]
-        }
       }
     }
   },
   "cleanup": {
     "decodeHTMLEntities": true,
     "normalizeWhitespace": true,
-    "removeText": [
-      "LectorManga",
-      "Leer online"
-    ]
+    "removeText": []
   },
   "tests": {
-    "query": "one piece",
+    "query": "solo leveling",
     "minSearchResults": 1,
     "minChapters": 1,
     "minPages": 1

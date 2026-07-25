@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-07-25 — Two new MangaThemesia sources
+
+- Added `lagoonscans` (English) and `mangaesp` (Spanish), both mapped from the public MangaThemesia HTML theme they run on.
+- Both register as `testing`/`experimental`, with selectors mirroring the theme's default markup — unverified against each domain's live HTML and pending live validation before wider use.
+
 ## 2026-07-12 — Public HTTPS runtime policy
 
 - Treat `allowedDomains` as expected-host diagnostics instead of a hard block for dynamically discovered public CDN hosts.

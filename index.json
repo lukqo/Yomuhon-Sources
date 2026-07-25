@@ -1,8 +1,38 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-21",
+  "updatedAt": "2026-07-25",
   "minimumAppVersion": "1.0.0",
   "sources": [
+    {
+      "id": "lagoonscans",
+      "name": "Lagoon Scans",
+      "version": 1,
+      "language": "en",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/lagoonscans.json",
+      "enabled": true,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "lagoonscans.com"
+      ],
+      "notes": "Mapped from the public MangaThemesia (Madara-family) theme this site runs on; selectors mirror the theme's default markup but are unverified against this specific domain's live HTML. Needs live validation before enabling further."
+    },
+    {
+      "id": "mangaesp",
+      "name": "MangaEsp",
+      "version": 1,
+      "language": "es",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangaesp.json",
+      "enabled": true,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "mangaesp.topmanhuas.org"
+      ],
+      "notes": "Mapped from the public MangaThemesia theme this site runs on; chapter-number regex accepts both capitulo- and chapter- URL slugs since the live convention wasn't verified. Needs live validation before enabling further."
+    },
     {
       "id": "lectormanga_es",
       "name": "LectorManga",
