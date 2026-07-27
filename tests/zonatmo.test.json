@@ -1,0 +1,20 @@
+{
+  "sourceID": "zonatmo_es",
+  "queries": [
+    "gachiakuta",
+    "solo leveling"
+  ],
+  "probe": {
+    "query": "gachiakuta",
+    "expectedTitleContains": "Gachiakuta",
+    "mangaPathContains": "/library/"
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  },
+  "discover": {
+    "minPopularResults": 1
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "sourceID": "mangapill_json",
+  "queries": [
+    "hime no dameshi",
+    "one piece"
+  ],
+  "probe": {
+    "query": "hime no dameshi",
+    "expectedTitleContains": "Hime no Dameshi",
+    "mangaPathContains": "/manga/",
+    "chapterPathContains": "/chapters/"
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}

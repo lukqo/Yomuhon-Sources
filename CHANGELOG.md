@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-27 — Restore sources deleted by accident (again) + stop silent breakage
+
+- Same failure class as 2026-07-26, recurring: the two `new` commits made on 2026-07-27 (`de3ae31`, `ecbb1af`) deleted `lectormanga_es.json`, `mangadex.json`, `mangakatana.json`, `mangapill.json`, `webtoon_de.json`, `webtoon_en.json`, `webtoon_es.json`, `webtoon_fr.json`, `webtoon_id.json`, `webtoon_th.json`, `webtoon_zh_hant.json`, `leermanga.json`, `olympusbiblioteca.json` and their matching `tests/*.test.json` files (plus `zonatmo.test.json`, deleted earlier and never restored), again without touching `index.json`. `python3 scripts/validate_sources.py` would fail immediately with `Missing file: sources/lagoonscans.json` (or the next missing entry), and 14 of 15 catalog entries pointed at 404s on raw.githubusercontent.com — so the app could only ever load `zonatmo_es`, and even that only if a device had no stale cache.
+- Restored all 14 missing source/test file pairs verbatim from the last commit where each existed (`ecbb1af^` for `lagoonscans.json`/`.test.json`, `de3ae31^` for everything else). No selectors changed. `id`/`name`/`version`/`language`/`engineMode` on every restored file match its `index.json` entry exactly, and `allowedDomains` still cover each `baseURL` host.
+- Root cause both times: whatever local process is used to add/update a single source file is regenerating/committing the whole `sources/` and `tests/` directories from an incomplete local checkout instead of touching only the changed file, and the change is pushed without running `scripts/validate_sources.py` first. Until that workflow is fixed, this will keep recurring. Recommended fix: run `python3 scripts/validate_sources.py` locally (it fails loudly and immediately on any missing/mismatched file) before every commit that touches `index.json` or `sources/**`, and never edit `sources/**` from a shallow/partial local clone.
+
 ## 2026-07-27 — Per-source content-type discovery (`discover.types`)
 
 - Added an optional `discover.types` block, mirroring `discover.genres`: a source declares its own content-type taxonomy (Manga/Manhwa/Manhua/Novela/etc.) instead of the app assuming a fixed enum. `supports.types: true` requires `discover.types`; both are optional so existing configs decode unchanged.

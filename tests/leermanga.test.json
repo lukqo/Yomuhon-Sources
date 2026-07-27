@@ -1,0 +1,16 @@
+{
+  "sourceID": "leermanga",
+  "queries": [
+    "one piece",
+    "solo leveling"
+  ],
+  "probe": {
+    "query": "one piece",
+    "expectedTitleContains": "One Piece"
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}
