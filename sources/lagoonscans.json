@@ -1,15 +1,15 @@
 {
   "schemaVersion": 1,
-  "id": "leermanga",
-  "name": "LeerManga",
+  "id": "lagoonscans",
+  "name": "Lagoon Scans",
   "version": 1,
-  "language": "es",
-  "baseURL": "https://leermanga.net",
+  "language": "en",
+  "baseURL": "https://lagoonscans.com",
   "engineMode": "html",
   "enabledByDefault": false,
   "experimental": true,
   "allowedDomains": [
-    "leermanga.net"
+    "lagoonscans.com"
   ],
   "supports": {
     "search": true,
@@ -23,38 +23,35 @@
     "headers": {
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
-      "Referer": "https://leermanga.net/"
+      "Referer": "https://lagoonscans.com/"
     }
   },
   "routes": {
     "popular": {
-      "path": "/biblioteca",
+      "path": "/manga",
       "query": {
-        "orden": "popular",
+        "title": "",
+        "order": "popular",
         "page": "1"
       }
     },
     "search": {
-      "path": "/biblioteca",
+      "path": "/manga",
       "query": {
-        "nombre": "{{query}}",
+        "title": "{{query}}",
         "page": "1"
       }
     }
   },
   "selectors": {
     "popular": {
-      "container": ".page-item-detail, .c-tabs-item__content .c-tabs-item, .manga-item",
+      "container": ".listupd .bs .bsx, .listo .bs .bsx, .utao .uta .imgu",
       "title": {
         "selectors": [
-          ".post-title h3 a",
-          ".post-title h4 a",
-          ".post-title a",
           "a"
         ],
         "attrs": [
-          "title",
-          "text"
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
@@ -64,9 +61,6 @@
       },
       "url": {
         "selectors": [
-          ".post-title h3 a",
-          ".post-title h4 a",
-          ".post-title a",
           "a"
         ],
         "attrs": [
@@ -76,29 +70,24 @@
       },
       "cover": {
         "selectors": [
-          ".tab-thumb img",
-          ".item-thumb img",
           "img"
         ],
         "attrs": [
-          "data-src",
           "data-lazy-src",
+          "data-src",
+          "data-cfsrc",
           "src"
         ]
       }
     },
     "search": {
-      "container": ".c-tabs-item__content, .row.c-tabs-item, .page-item-detail",
+      "container": ".listupd .bs .bsx, .listo .bs .bsx, .utao .uta .imgu",
       "title": {
         "selectors": [
-          ".post-title h3 a",
-          ".post-title h4 a",
-          ".post-title a",
           "a"
         ],
         "attrs": [
-          "title",
-          "text"
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
@@ -108,9 +97,6 @@
       },
       "url": {
         "selectors": [
-          ".post-title h3 a",
-          ".post-title h4 a",
-          ".post-title a",
           "a"
         ],
         "attrs": [
@@ -120,13 +106,12 @@
       },
       "cover": {
         "selectors": [
-          ".tab-thumb img",
-          ".item-thumb img",
           "img"
         ],
         "attrs": [
-          "data-src",
           "data-lazy-src",
+          "data-src",
+          "data-cfsrc",
           "src"
         ]
       }
@@ -134,7 +119,6 @@
     "details": {
       "title": {
         "selectors": [
-          ".post-title h1",
           "h1.entry-title"
         ],
         "attrs": [
@@ -148,9 +132,8 @@
       },
       "synopsis": {
         "selectors": [
-          ".summary__content",
-          ".description-summary .summary__content",
-          ".entry-content p"
+          ".entry-content[itemprop='description']",
+          ".desc"
         ],
         "attrs": [
           "text"
@@ -162,20 +145,21 @@
       },
       "cover": {
         "selectors": [
-          ".summary_image img",
-          ".tab-summary .summary_image img"
+          "div[itemprop='image'] img",
+          ".thumb img"
         ],
         "attrs": [
-          "data-src",
           "data-lazy-src",
+          "data-src",
           "src"
         ]
       }
     },
     "chapters": {
-      "container": "li.wp-manga-chapter, .listing-chapters_wrap li, .chapter-item",
+      "container": "#chapterlist li",
       "title": {
         "selectors": [
+          ".chapternum",
           "a"
         ],
         "attrs": [
@@ -197,7 +181,7 @@
       },
       "number": {
         "from": "url",
-        "regex": "(?:capitulo|chapter)-([0-9]+(?:\\.[0-9]+)?)"
+        "regex": "chapter-([0-9]+(?:\\.[0-9]+)?)"
       },
       "sort": "numberDescending"
     },
@@ -205,10 +189,11 @@
       "extractors": [
         {
           "type": "css",
-          "selector": ".reading-content img, div#readerarea img",
+          "selector": "div#readerarea img",
           "attrs": [
-            "data-src",
             "data-lazy-src",
+            "data-src",
+            "data-cfsrc",
             "src"
           ]
         },
@@ -243,7 +228,7 @@
     "removeText": []
   },
   "tests": {
-    "query": "one piece",
+    "query": "solo leveling",
     "minSearchResults": 1,
     "minChapters": 1,
     "minPages": 1

@@ -398,6 +398,9 @@
             "numberAscending",
             "numberDescending"
           ]
+        },
+        "dedupeByNumber": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false

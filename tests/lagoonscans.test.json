@@ -1,12 +1,14 @@
 {
-  "sourceID": "olympusbiblioteca",
+  "sourceID": "lagoonscans",
   "queries": [
     "solo leveling",
-    "reinscripcion del mercenario"
+    "omniscient reader"
   ],
   "probe": {
     "query": "solo leveling",
-    "expectedTitleContains": "Solo Leveling"
+    "expectedTitleContains": "Solo Leveling",
+    "mangaPathContains": "/manga/",
+    "chapterPathContains": "chapter-"
   },
   "expected": {
     "minSearchResults": 1,

@@ -1,8 +1,23 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-07-26",
+  "updatedAt": "2026-07-27",
   "minimumAppVersion": "1.0.0",
   "sources": [
+    {
+      "id": "lagoonscans",
+      "name": "Lagoon Scans",
+      "version": 1,
+      "language": "en",
+      "kind": "declarative-html",
+      "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/lagoonscans.json",
+      "enabled": true,
+      "experimental": true,
+      "status": "testing",
+      "allowedDomains": [
+        "lagoonscans.com"
+      ],
+      "notes": "Restored 2026-07-27: this entry (and its source/test files) was authored and confirmed live on 2026-07-25 per CHANGELOG.md, then silently dropped from index.json by a later, undocumented commit that never actually deleted or updated the changelog entry describing its restoration. Re-run live validation before treating it as stable again, since the site markup may have drifted since 07-25. Mapped from the public MangaThemesia (Madara-family) theme this site runs on."
+    },
     {
       "id": "lectormanga_es",
       "name": "LectorManga",
@@ -204,7 +219,7 @@
     {
       "id": "zonatmo_es",
       "name": "ZonaTMO",
-      "version": 1,
+      "version": 2,
       "language": "es",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/zonatmo.json",
@@ -216,7 +231,7 @@
         "storage.zonatmo.org",
         "storage2.zonatmo.org"
       ],
-      "notes": "Experimental Spanish source for zonatmo.org. Keep testing until Search → Detail → Chapters → Pages → First image passes live validation and Yomuhon."
+      "notes": "The original TuMangaOnline/ZonaTMO operation (zonatmo.com) was shut down by Spanish police in March/April 2026 and its domain is in registrar clientHold; zonatmo.org is one of several unaffiliated mirror domains that appeared afterward, so its markup and uptime are not guaranteed to track the original site and should be re-checked before every version bump. v2 scopes the chapters container away from generic page chrome and adds dedupeByNumber, since TMO-style pages list the same chapter once per scanlation group under distinct viewer URLs, which previously produced duplicate chapter rows. Keep testing until Search → Detail → Chapters → Pages → First image passes live validation."
     },
     {
       "id": "leermanga",

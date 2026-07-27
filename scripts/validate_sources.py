@@ -290,7 +290,7 @@ def validate_html_contract(config: dict[str, Any], source_id: str) -> None:
         if isinstance(container, str):
             assert_supported_selector(container, f"{source_id}.selectors.{section_name}.container")
         for field_name, field in section.items():
-            if field_name in {"container", "sort", "filters", "extractors", "number", "htmlScope"}:
+            if field_name in {"container", "sort", "filters", "extractors", "number", "htmlScope", "dedupeByNumber"}:
                 continue
             for selector in iter_field_selectors(field):
                 assert_supported_selector(selector, f"{source_id}.selectors.{section_name}.{field_name}")
@@ -864,6 +864,19 @@ def parse_html_chapters(config: dict[str, Any], html_text: str, manga_url: str) 
         if number is not None:
             chapter["number"] = number
         chapters.append(chapter)
+
+    if selector.get("dedupeByNumber") is True:
+        deduped: list[dict[str, Any]] = []
+        seen_numbers: set[float] = set()
+        for chapter in chapters:
+            number = chapter.get("number")
+            if number is not None:
+                if number in seen_numbers:
+                    continue
+                seen_numbers.add(number)
+            deduped.append(chapter)
+        chapters = deduped
+
     sort_mode = selector.get("sort")
     if sort_mode in ("numberAscending", "numberDescending") and chapters and all("number" in chapter for chapter in chapters):
         chapters.sort(key=lambda chapter: (chapter["number"], chapter["id"]))
