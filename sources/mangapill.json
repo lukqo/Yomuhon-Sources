@@ -1,104 +1,54 @@
 {
   "schemaVersion": 1,
-  "id": "lagoonscans",
-  "name": "Lagoon Scans",
-  "version": 1,
+  "id": "mangapill_json",
+  "name": "MangaPill JSON",
+  "version": 3,
   "language": "en",
-  "baseURL": "https://lagoonscans.com",
+  "baseURL": "https://mangapill.com",
   "engineMode": "html",
   "enabledByDefault": false,
   "experimental": true,
   "allowedDomains": [
-    "lagoonscans.com"
+    "mangapill.com",
+    "cdn.mangapill.com",
+    "cdn.readdetectiveconan.com"
   ],
   "supports": {
     "search": true,
-    "popular": true,
+    "popular": false,
     "details": true,
     "chapters": true,
-    "pages": true,
-    "genres": false
+    "pages": true
   },
   "network": {
     "headers": {
       "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Yomuhon/1.0",
-      "Referer": "https://lagoonscans.com/"
+      "Referer": "https://mangapill.com/"
     }
   },
   "routes": {
-    "popular": {
-      "path": "/manga",
-      "query": {
-        "title": "",
-        "order": "popular",
-        "page": "1"
-      }
-    },
     "search": {
-      "path": "/manga",
+      "path": "/search",
       "query": {
-        "title": "{{query}}",
-        "page": "1"
+        "q": "{{query}}"
       }
     }
   },
   "selectors": {
-    "popular": {
-      "container": ".listupd .bs .bsx, .listo .bs .bsx, .utao .uta .imgu",
-      "title": {
-        "selectors": [
-          "a"
-        ],
-        "attrs": [
-          "title"
-        ],
-        "cleanup": [
-          "decodeEntities",
-          "normalizeWhitespace"
-        ],
-        "required": true
-      },
-      "url": {
-        "selectors": [
-          "a"
-        ],
-        "attrs": [
-          "href"
-        ],
-        "required": true
-      },
-      "cover": {
-        "selectors": [
-          "img"
-        ],
-        "attrs": [
-          "data-lazy-src",
-          "data-src",
-          "data-cfsrc",
-          "src"
-        ]
-      }
-    },
     "search": {
-      "container": ".listupd .bs .bsx, .listo .bs .bsx, .utao .uta .imgu",
+      "container": "a[href*='/manga/']",
       "title": {
-        "selectors": [
-          "a"
-        ],
         "attrs": [
-          "title"
+          "title",
+          "text"
         ],
         "cleanup": [
           "decodeEntities",
           "normalizeWhitespace"
-        ],
-        "required": true
+        ]
       },
       "url": {
-        "selectors": [
-          "a"
-        ],
         "attrs": [
           "href"
         ],
@@ -109,9 +59,9 @@
           "img"
         ],
         "attrs": [
-          "data-lazy-src",
           "data-src",
-          "data-cfsrc",
+          "data-original",
+          "data-lazy-src",
           "src"
         ]
       }
@@ -119,51 +69,52 @@
     "details": {
       "title": {
         "selectors": [
-          "h1.entry-title"
+          "h1",
+          "meta[property='og:title']"
         ],
         "attrs": [
-          "text"
+          "text",
+          "content"
         ],
         "cleanup": [
           "decodeEntities",
           "normalizeWhitespace"
-        ],
-        "required": true
+        ]
       },
       "synopsis": {
         "selectors": [
-          ".entry-content[itemprop='description']",
-          ".desc"
+          "meta[name='description']",
+          "meta[property='og:description']"
         ],
         "attrs": [
-          "text"
+          "content"
         ],
         "cleanup": [
+          "stripHTML",
           "decodeEntities",
           "normalizeWhitespace"
         ]
       },
       "cover": {
         "selectors": [
-          "div[itemprop='image'] img",
-          ".thumb img"
+          "meta[property='og:image']",
+          "img"
         ],
         "attrs": [
-          "data-lazy-src",
+          "content",
           "data-src",
+          "data-original",
+          "data-lazy-src",
           "src"
         ]
       }
     },
     "chapters": {
-      "container": "#chapterlist li",
+      "container": "a[href*='/chapters/']",
       "title": {
-        "selectors": [
-          ".chapternum",
-          "a"
-        ],
         "attrs": [
-          "text"
+          "text",
+          "title"
         ],
         "cleanup": [
           "decodeEntities",
@@ -171,9 +122,6 @@
         ]
       },
       "url": {
-        "selectors": [
-          "a"
-        ],
         "attrs": [
           "href"
         ],
@@ -183,17 +131,18 @@
         "from": "url",
         "regex": "chapter-([0-9]+(?:\\.[0-9]+)?)"
       },
-      "sort": "numberDescending"
+      "sort": "numberAscending"
     },
     "pages": {
       "extractors": [
         {
           "type": "css",
-          "selector": "div#readerarea img",
+          "selector": "img[alt*='Page'], img[src*='cdn.mangapill.com'], img[src*='cdn.readdetectiveconan.com'], img[data-src*='cdn.readdetectiveconan.com']",
           "attrs": [
-            "data-lazy-src",
             "data-src",
-            "data-cfsrc",
+            "data-original",
+            "data-lazy-src",
+            "srcset",
             "src"
           ]
         },
@@ -217,7 +166,9 @@
           "ads/",
           "icon",
           "favicon",
-          "sprite"
+          "sprite",
+          "doubleclick",
+          "analytics"
         ]
       }
     }
@@ -225,10 +176,13 @@
   "cleanup": {
     "decodeHTMLEntities": true,
     "normalizeWhitespace": true,
-    "removeText": []
+    "removeText": [
+      "Read Manga Online",
+      "Advertisement"
+    ]
   },
   "tests": {
-    "query": "solo leveling",
+    "query": "hime no dameshi",
     "minSearchResults": 1,
     "minChapters": 1,
     "minPages": 1

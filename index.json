@@ -25,13 +25,13 @@
       "language": "es",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/mangaesp.json",
-      "enabled": true,
+      "enabled": false,
       "experimental": true,
       "status": "testing",
       "allowedDomains": [
         "mangaesp.topmanhuas.org"
       ],
-      "notes": "Mapped from the public MangaThemesia theme this site runs on; chapter-number regex accepts both capitulo- and chapter- URL slugs since the live convention wasn't verified. Needs live validation before enabling further."
+      "notes": "Disabled 2026-07-26: mangaesp.topmanhuas.org no longer serves the manga site — it now returns a generic hosting-provider parking page (SYSDOP LLC), meaning the domain has been reassigned or the site moved. Re-enable only after confirming a working domain and re-running live validation."
     },
     {
       "id": "lectormanga_es",

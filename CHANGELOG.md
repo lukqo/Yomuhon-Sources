@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-26 — Restore sources deleted by accident + disable dead MangaEsp domain
+
+- The "update" commit that renamed `mangapill.json`→`lagoonscans.json` and `lectormanga_es.json`→`mangaesp.json` also deleted `mangadex.json`, `mangakatana.json`, `mangapill.json`, `lectormanga_es.json`, `zonatmo.json` and all `webtoon_*.json` source/test files, without removing their entries from `index.json`. Static validation was broken (`Missing file: sources/lectormanga_es.json`) and 10 of 12 catalog entries pointed at 404s on raw.githubusercontent.com.
+- Restored all 10 source/test file pairs from the last commit before the deletion (`ffcaefc`). No selectors changed; `python3 scripts/validate_sources.py` now passes again (`STATIC OK: 14 source(s), 14 live test definition(s)`).
+- Disabled `mangaesp` (`enabled: false`): `mangaesp.topmanhuas.org` now returns a hosting-provider parking page instead of the manga site — the domain appears to have been reassigned. Needs a working domain before re-enabling.
+- `lagoonscans.com` confirmed live; still a WordPress/Madara-family theme, chapter URL slugs match the source's `chapter-([0-9]+)` regex. Recommend running `--live --source lagoonscans` to confirm the full Search → Detail → Chapters → Pages → First image chain before promoting it out of `testing`.
+
 ## 2026-07-25 — WEBTOON notes cleanup
 
 - Removed the "requires Yomuhon v12 or newer" claim from all `webtoon_*` entries: the app's only real version gate is `index.minimumAppVersion` (semver), and no such v12 check exists in the current app code — the note was stale/inaccurate.
