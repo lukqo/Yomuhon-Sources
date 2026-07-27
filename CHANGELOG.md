@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-27 — Per-source content-type discovery (`discover.types`)
+
+- Added an optional `discover.types` block, mirroring `discover.genres`: a source declares its own content-type taxonomy (Manga/Manhwa/Manhua/Novela/etc.) instead of the app assuming a fixed enum. `supports.types: true` requires `discover.types`; both are optional so existing configs decode unchanged.
+- Unlike genre IDs, type IDs are **not** canonical across sources — the app never fuses types from different sources into one list, only within each source's own catalog. `schemas/source-schema-v1.json` and `scripts/validate_sources.py` gained matching `typeItem`/`typeDiscovery` defs, static validation, and `--live` probe support (`minTypeResults`/`typeID` in test files).
+- `zonatmo_es`: added `discover.types` with the site's real "Tipo" filter (Manga/Manhwa/Manhua/Webtoon/Novela/Comic/One shot/Doujinshi/OEL). Only the `manga`/`manhwa`/`manhua` values are confirmed (they appear directly in the site's own `/library/<value>/...` URLs); the `type` query parameter name and the remaining values are a best-effort guess. Run `python3 scripts/validate_sources.py --live --source zonatmo_es` before trusting this beyond `testing`.
+- `docs/discover-contract.md` updated with a `types` section and the caveat above.
+
 ## 2026-07-26 — Restore sources deleted by accident + disable dead MangaEsp domain
 
 - The "update" commit that renamed `mangapill.json`→`lagoonscans.json` and `lectormanga_es.json`→`mangaesp.json` also deleted `mangadex.json`, `mangakatana.json`, `mangapill.json`, `lectormanga_es.json`, `zonatmo.json` and all `webtoon_*.json` source/test files, without removing their entries from `index.json`. Static validation was broken (`Missing file: sources/lectormanga_es.json`) and 10 of 12 catalog entries pointed at 404s on raw.githubusercontent.com.

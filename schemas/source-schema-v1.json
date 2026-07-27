@@ -93,6 +93,9 @@
         },
         "genres": {
           "type": "boolean"
+        },
+        "types": {
+          "type": "boolean"
         }
       },
       "additionalProperties": false
@@ -771,6 +774,50 @@
       },
       "additionalProperties": false
     },
+    "typeItem": {
+      "type": "object",
+      "required": [
+        "id",
+        "title",
+        "value"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "typeDiscovery": {
+      "type": "object",
+      "required": [
+        "items",
+        "operation"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/typeItem"
+          }
+        },
+        "operation": {
+          "$ref": "#/$defs/discoverOperation"
+        }
+      },
+      "additionalProperties": false
+    },
     "discoverConfig": {
       "type": "object",
       "properties": {
@@ -779,6 +826,9 @@
         },
         "genres": {
           "$ref": "#/$defs/genreDiscovery"
+        },
+        "types": {
+          "$ref": "#/$defs/typeDiscovery"
         }
       },
       "additionalProperties": false
@@ -843,6 +893,12 @@
           ]
         },
         "genres": {
+          "enum": [
+            "html",
+            "json-api"
+          ]
+        },
+        "types": {
           "enum": [
             "html",
             "json-api"

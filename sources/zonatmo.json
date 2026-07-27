@@ -19,7 +19,8 @@
     "details": true,
     "chapters": true,
     "pages": true,
-    "genres": false
+    "genres": false,
+    "types": true
   },
   "network": {
     "headers": {
@@ -245,6 +246,63 @@
             "data-lazy-src",
             "src"
           ]
+        }
+      }
+    },
+    "types": {
+      "items": [
+        {"id": "manga", "title": "Manga", "value": "manga"},
+        {"id": "manhwa", "title": "Manhwa", "value": "manhwa"},
+        {"id": "manhua", "title": "Manhua", "value": "manhua"},
+        {"id": "webtoon", "title": "Webtoon", "value": "webtoon"},
+        {"id": "novela", "title": "Novela", "value": "novel"},
+        {"id": "comic", "title": "Comic", "value": "comic"},
+        {"id": "one-shot", "title": "One shot", "value": "one_shot"},
+        {"id": "doujinshi", "title": "Doujinshi", "value": "doujinshi"},
+        {"id": "oel", "title": "OEL", "value": "oel"}
+      ],
+      "operation": {
+        "route": {
+          "path": "/biblioteca",
+          "query": {
+            "type": "{{type}}"
+          },
+          "pagination": {
+            "type": "query",
+            "param": "page",
+            "start": 1,
+            "maxPages": 1
+          }
+        },
+        "selector": {
+          "container": "a[href*='/library/']",
+          "title": {
+            "attrs": [
+              "text",
+              "title"
+            ],
+            "cleanup": [
+              "decodeEntities",
+              "normalizeWhitespace"
+            ]
+          },
+          "url": {
+            "attrs": [
+              "href"
+            ],
+            "required": true
+          },
+          "cover": {
+            "selectors": [
+              "img"
+            ],
+            "attrs": [
+              "data-src",
+              "data-original",
+              "data-lazy-src",
+              "src"
+            ]
+          }
         }
       }
     }

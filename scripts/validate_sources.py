@@ -26,6 +26,7 @@ ALLOWED_ENGINE_MODES = {"html", "json-api"}
 SUPPORTED_METHODS = {"GET"}
 SOURCE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9_\-]*$")
 GENRE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9\-]*$")
+TYPE_ID_RE = re.compile(r"^[a-z0-9][a-z0-9\-]*$")
 IMAGE_EXT_RE = re.compile(r"\.(?:jpe?g|png|webp)(?:$|\?)", re.I)
 
 
@@ -42,6 +43,7 @@ class SourceReport:
     pages: int = 0
     popular_results: int = 0
     genre_results: int = 0
+    type_results: int = 0
     image_url: str | None = None
     elapsed_seconds: float = 0.0
     error: str | None = None
@@ -252,7 +254,7 @@ def validate_test_definition(test: dict[str, Any], source_id: str, test_path: Pa
     if discovery is not None:
         if not isinstance(discovery, dict):
             raise ValidationError(f"{test_path.relative_to(ROOT)}: discover must be an object")
-        for key in ("minPopularResults", "minPopularCoveredResults", "minGenreResults"):
+        for key in ("minPopularResults", "minPopularCoveredResults", "minGenreResults", "minTypeResults"):
             if key in discovery and (not isinstance(discovery[key], int) or discovery[key] < 1):
                 raise ValidationError(f"{test_path.relative_to(ROOT)}: discover.{key} must be >= 1")
         if "minPopularCoveredResults" in discovery and "minPopularResults" not in discovery:
@@ -260,6 +262,9 @@ def validate_test_definition(test: dict[str, Any], source_id: str, test_path: Pa
         genre_id = discovery.get("genreID")
         if "minGenreResults" in discovery and (not isinstance(genre_id, str) or not genre_id.strip()):
             raise ValidationError(f"{test_path.relative_to(ROOT)}: discover.genreID is required")
+        type_id = discovery.get("typeID")
+        if "minTypeResults" in discovery and (not isinstance(type_id, str) or not type_id.strip()):
+            raise ValidationError(f"{test_path.relative_to(ROOT)}: discover.typeID is required")
 
 
 def validate_html_contract(config: dict[str, Any], source_id: str) -> None:
@@ -389,6 +394,33 @@ def validate_discovery_contract(config: dict[str, Any], source_id: str) -> None:
         validate_discovery_operation(genres.get("operation"), source_id, "discover.genres.operation", mode)
     elif genres is not None:
         raise ValidationError(f"{source_id}: discover.genres requires supports.genres = true")
+
+    types = discover.get("types")
+    if supports.get("types"):
+        if not isinstance(types, dict):
+            raise ValidationError(f"{source_id}: types support requires discover.types")
+        items = types.get("items")
+        if not isinstance(items, list) or not items:
+            raise ValidationError(f"{source_id}: discover.types.items cannot be empty")
+        seen_ids = set()
+        for position, item in enumerate(items):
+            if not isinstance(item, dict):
+                raise ValidationError(f"{source_id}: discover.types.items[{position}] must be an object")
+            type_id = item.get("id")
+            title = item.get("title")
+            value = item.get("value")
+            if not isinstance(type_id, str) or not TYPE_ID_RE.fullmatch(type_id):
+                raise ValidationError(f"{source_id}: invalid type id {type_id!r}")
+            if type_id in seen_ids:
+                raise ValidationError(f"{source_id}: duplicate type id {type_id!r}")
+            seen_ids.add(type_id)
+            if not isinstance(title, str) or not title.strip():
+                raise ValidationError(f"{source_id}: type {type_id!r} has no title")
+            if not isinstance(value, str) or not value.strip():
+                raise ValidationError(f"{source_id}: type {type_id!r} has no source value")
+        validate_discovery_operation(types.get("operation"), source_id, "discover.types.operation", mode)
+    elif types is not None:
+        raise ValidationError(f"{source_id}: discover.types requires supports.types = true")
 
 
 def json_path(root: Any, path: str) -> Any:
@@ -950,6 +982,19 @@ def validate_live_discovery_html(report: SourceReport, session: Any, config: dic
         report.genre_results = len(results)
         if len(results) < discovery_test["minGenreResults"]:
             raise ValidationError("Genre discovery returned too few results")
+    if "minTypeResults" in discovery_test:
+        types = config["discover"]["types"]
+        type_id = discovery_test["typeID"]
+        item = next((item for item in types["items"] if item["id"] == type_id), None)
+        if item is None:
+            raise ValidationError(f"Type probe {type_id!r} is not declared")
+        operation = types["operation"]
+        route = operation["route"]
+        url = html_route_url(config, route, {"type": item["value"]}, page=(route.get("pagination") or {}).get("start", 1))
+        results = parse_html_list(config, fetch_html(session, url, config, timeout), operation["selector"])
+        report.type_results = len(results)
+        if len(results) < discovery_test["minTypeResults"]:
+            raise ValidationError("Type discovery returned too few results")
 
 
 def validate_live_discovery_api(report: SourceReport, session: Any, config: dict[str, Any], test: dict[str, Any], timeout: float) -> None:
@@ -970,6 +1015,16 @@ def validate_live_discovery_api(report: SourceReport, session: Any, config: dict
         report.genre_results = len(results)
         if len(results) < discovery_test["minGenreResults"]:
             raise ValidationError("Genre discovery returned too few results")
+    if "minTypeResults" in discovery_test:
+        types = discover["types"]
+        type_id = discovery_test["typeID"]
+        item = next((item for item in types["items"] if item["id"] == type_id), None)
+        if item is None:
+            raise ValidationError(f"Type probe {type_id!r} is not declared")
+        results = api_list(session, config, types["operation"]["api"], {"type": item["value"]}, timeout)
+        report.type_results = len(results)
+        if len(results) < discovery_test["minTypeResults"]:
+            raise ValidationError("Type discovery returned too few results")
 
 
 def run_json_api(entry: dict[str, Any], config: dict[str, Any], test: dict[str, Any], timeout: float) -> SourceReport:
@@ -1082,6 +1137,7 @@ def validate_live(
         print(
             f"{marker}: {report.source_id} | search={report.search_results} chapters={report.chapters} "
             f"pages={report.pages} popular={report.popular_results} genres={report.genre_results} "
+            f"types={report.type_results} "
             f"time={report.elapsed_seconds}s" + (f" | {report.error}" if report.error else "")
         )
 
