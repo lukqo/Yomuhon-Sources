@@ -1,0 +1,16 @@
+{
+  "sourceID": "olympusbiblioteca",
+  "queries": [
+    "solo leveling",
+    "reinscripcion del mercenario"
+  ],
+  "probe": {
+    "query": "solo leveling",
+    "expectedTitleContains": "Solo Leveling"
+  },
+  "expected": {
+    "minSearchResults": 1,
+    "minChapters": 1,
+    "minPages": 1
+  }
+}
