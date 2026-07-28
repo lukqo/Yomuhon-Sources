@@ -51,6 +51,6 @@ Sites change their markup/API often. If a source stops working:
 
 ## Code of conduct
 
-Be respectful and constructive. Please don't submit definitions that bypass
-anti-bot protections or that point at sources hosting content without rights
-to distribute it.
+See [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). In addition, please don't
+submit definitions that bypass anti-bot protections or that point at sources
+hosting content without rights to distribute it.

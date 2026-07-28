@@ -59,6 +59,8 @@ python3 scripts/validate_sources.py --live --report artifacts/live-source-report
 
 La validación estática comprueba schema, versión, kind/runtime, rutas, selectores soportados, `allowedDomains` esperados, capacidades Discover y presencia de test por fuente.
 
+Esta validación estática corre automáticamente en cada PR vía GitHub Actions (`.github/workflows/validate-sources.yml`), así que no hace falta correrla manualmente antes de abrir el PR — aunque es recomendable para detectar errores antes.
+
 La validación live comprueba:
 
 ```text
