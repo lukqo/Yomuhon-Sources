@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "zonatmo_es",
   "name": "ZonaTMO",
-  "version": 2,
+  "version": 3,
   "language": "es",
   "baseURL": "https://zonatmo.org",
   "engineMode": "html",
@@ -31,7 +31,10 @@
   },
   "routes": {
     "popular": {
-      "path": "/"
+      "path": "/biblioteca",
+      "query": {
+        "orden": "likes_count"
+      }
     },
     "search": {
       "path": "/",
@@ -216,7 +219,10 @@
   "discover": {
     "popular": {
       "route": {
-        "path": "/"
+        "path": "/biblioteca",
+        "query": {
+          "orden": "likes_count"
+        }
       },
       "selector": {
         "container": "a[href*='/library/']",
