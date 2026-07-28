@@ -156,8 +156,11 @@
       }
     },
     "chapters": {
-      "container": "li.upload-link, .chapters li, #chapters li, li",
+      "container": "#chapters-list > li.upload-link",
       "title": {
+        "selectors": [
+          ".chapter-number"
+        ],
         "attrs": [
           "text"
         ],
@@ -168,6 +171,9 @@
       },
       "url": {
         "selectors": [
+          ".chapter-detail a[href*='/view_uploads/']",
+          "a.btn.btn-primary[href*='/view_uploads/']",
+          "a[href*='/view_uploads/']",
           "a[href*='/viewer/']",
           "a[href*='/chapter/']",
           "a[href*='/read/']"
@@ -273,15 +279,51 @@
     },
     "types": {
       "items": [
-        {"id": "manga", "title": "Manga", "value": "manga"},
-        {"id": "manhwa", "title": "Manhwa", "value": "manhwa"},
-        {"id": "manhua", "title": "Manhua", "value": "manhua"},
-        {"id": "webtoon", "title": "Webtoon", "value": "webtoon"},
-        {"id": "novela", "title": "Novela", "value": "novela"},
-        {"id": "comic", "title": "Comic", "value": "comic"},
-        {"id": "one-shot", "title": "One shot", "value": "one_shot"},
-        {"id": "doujinshi", "title": "Doujinshi", "value": "doujinshi"},
-        {"id": "oel", "title": "OEL", "value": "oel"}
+        {
+          "id": "manga",
+          "title": "Manga",
+          "value": "manga"
+        },
+        {
+          "id": "manhwa",
+          "title": "Manhwa",
+          "value": "manhwa"
+        },
+        {
+          "id": "manhua",
+          "title": "Manhua",
+          "value": "manhua"
+        },
+        {
+          "id": "webtoon",
+          "title": "Webtoon",
+          "value": "webtoon"
+        },
+        {
+          "id": "novela",
+          "title": "Novela",
+          "value": "novela"
+        },
+        {
+          "id": "comic",
+          "title": "Comic",
+          "value": "comic"
+        },
+        {
+          "id": "one-shot",
+          "title": "One shot",
+          "value": "one_shot"
+        },
+        {
+          "id": "doujinshi",
+          "title": "Doujinshi",
+          "value": "doujinshi"
+        },
+        {
+          "id": "oel",
+          "title": "OEL",
+          "value": "oel"
+        }
       ],
       "operation": {
         "route": {
