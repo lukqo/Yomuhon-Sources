@@ -219,7 +219,7 @@
     {
       "id": "zonatmo_es",
       "name": "ZonaTMO",
-      "version": 3,
+      "version": 4,
       "language": "es",
       "kind": "declarative-html",
       "url": "https://raw.githubusercontent.com/lukqo/Yomuhon-Sources/main/sources/zonatmo.json",
@@ -231,7 +231,7 @@
         "storage.zonatmo.org",
         "storage2.zonatmo.org"
       ],
-      "notes": "The original TuMangaOnline/ZonaTMO operation (zonatmo.com) was shut down by Spanish police in March/April 2026 and its domain is in registrar clientHold; zonatmo.org is one of several unaffiliated mirror domains that appeared afterward, so its markup and uptime are not guaranteed to track the original site and should be re-checked before every version bump. v2 scopes the chapters container away from generic page chrome and adds dedupeByNumber, since TMO-style pages list the same chapter once per scanlation group under distinct viewer URLs, which previously produced duplicate chapter rows. v3 (2026-07-27) fixes popular/discover.popular pointing at '/', which currently serves a 'restableciendo contenido' (content being restored) placeholder instead of the manga grid post-shutdown; both routes now point at '/biblioteca' (sorted by likes_count), the same route discover.types.operation already used successfully. Keep testing until Search → Detail → Chapters → Pages → First image passes live validation."
+      "notes": "The original TuMangaOnline/ZonaTMO operation (zonatmo.com) was shut down by Spanish police in March/April 2026 and its domain is in registrar clientHold; zonatmo.org is one of several unaffiliated mirror domains that appeared afterward, so its markup and uptime are not guaranteed to track the original site and should be re-checked before every version bump. v2 scopes the chapters container away from generic page chrome and adds dedupeByNumber, since TMO-style pages list the same chapter once per scanlation group under distinct viewer URLs, which previously produced duplicate chapter rows. v3 (2026-07-27) fixed popular/discover.popular pointing at '/', which serves a 'restableciendo contenido' placeholder post-shutdown; both now point at '/biblioteca'. v4 (2026-07-27) fixes the actual query string: v3 guessed a bare '?type=X' and '?orden=...', which the live site silently ignores and falls back to its unfiltered default listing (confirmed live: '?type=manga' returned the same generic feed, not manga-only results). Captured the real request from the site's own 'Aplicar filtros' button via browser devtools: it requires the full sibling parameter set (order_item, order_dir, title, _pg, filter_by, author_filter, type, demography, status) together, and paginates via '_pg', not 'page'. Only the 'manga' type value was confirmed live; the other 8 discover.types values (manhwa, manhua, webtoon, novela, comic, one-shot, doujinshi, oel) are inferred from the id-mirrors-value pattern the confirmed one follows and still need live verification the same way before fully trusting per-type filtering. Keep testing until Search → Detail → Chapters → Pages → First image passes live validation."
     },
     {
       "id": "leermanga",

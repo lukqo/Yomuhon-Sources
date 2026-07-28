@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "zonatmo_es",
   "name": "ZonaTMO",
-  "version": 3,
+  "version": 4,
   "language": "es",
   "baseURL": "https://zonatmo.org",
   "engineMode": "html",
@@ -33,7 +33,15 @@
     "popular": {
       "path": "/biblioteca",
       "query": {
-        "orden": "likes_count"
+        "order_item": "likes_count",
+        "order_dir": "desc",
+        "title": "",
+        "_pg": "1",
+        "filter_by": "title",
+        "author_filter": "",
+        "type": "",
+        "demography": "",
+        "status": ""
       }
     },
     "search": {
@@ -221,7 +229,15 @@
       "route": {
         "path": "/biblioteca",
         "query": {
-          "orden": "likes_count"
+          "order_item": "likes_count",
+          "order_dir": "desc",
+          "title": "",
+          "_pg": "1",
+          "filter_by": "title",
+          "author_filter": "",
+          "type": "",
+          "demography": "",
+          "status": ""
         }
       },
       "selector": {
@@ -261,7 +277,7 @@
         {"id": "manhwa", "title": "Manhwa", "value": "manhwa"},
         {"id": "manhua", "title": "Manhua", "value": "manhua"},
         {"id": "webtoon", "title": "Webtoon", "value": "webtoon"},
-        {"id": "novela", "title": "Novela", "value": "novel"},
+        {"id": "novela", "title": "Novela", "value": "novela"},
         {"id": "comic", "title": "Comic", "value": "comic"},
         {"id": "one-shot", "title": "One shot", "value": "one_shot"},
         {"id": "doujinshi", "title": "Doujinshi", "value": "doujinshi"},
@@ -271,11 +287,19 @@
         "route": {
           "path": "/biblioteca",
           "query": {
-            "type": "{{type}}"
+            "order_item": "likes_count",
+            "order_dir": "desc",
+            "title": "",
+            "_pg": "1",
+            "filter_by": "title",
+            "author_filter": "",
+            "type": "{{type}}",
+            "demography": "",
+            "status": ""
           },
           "pagination": {
             "type": "query",
-            "param": "page",
+            "param": "_pg",
             "start": 1,
             "maxPages": 1
           }
