@@ -129,3 +129,9 @@ Consulta `docs/discover-contract.md`, `docs/identity-metadata-contract.md`, `doc
 ## Fuentes híbridas
 
 Las definiciones pueden combinar operaciones `html` y `json-api` mediante `operationModes`. Consulta `docs/hybrid-source-contract.md`.
+
+## Contribuir
+
+Las contribuciones son bienvenidas — ver [CONTRIBUTING.md](CONTRIBUTING.md) para el flujo de trabajo de agregar o arreglar una fuente.
+
+Este repositorio está licenciado bajo la [Licencia MIT](LICENSE).
