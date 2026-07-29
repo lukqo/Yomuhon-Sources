@@ -158,9 +158,7 @@ def assert_supported_selector(selector: str, context: str) -> None:
         return ""
 
     without_supported_has = re.sub(r":has\(([^()]*)\)", replace_has, without_attributes)
-    if ":has(" in without_supported_has or any(
-        token in without_supported_has for token in (":", "+", "~", ">")
-    ):
+    if ":has(" in without_supported_has or ":" in without_supported_has:
         raise ValidationError(
             f"{context}: selector uses syntax unsupported by Yomuhon: {selector!r}"
         )
